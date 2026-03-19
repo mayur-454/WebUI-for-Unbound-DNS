@@ -675,5 +675,44 @@ def api_config_delete_file():
     return jsonify({'success': rc == 0, 'error': err})
 
 
+# debug tab section
+@app.route('/debug')
+#@login_required
+def debug_page():
+    return render_template('debug.html', active_tab='debug')
+
+@app.route('/api/debug/run', methods=['POST'])
+#@login_required
+def api_debug_run():
+    data = request.get_json()
+    tool = data.get('tool')
+    target = data.get('target','').strip()
+    if not target:
+        return jsonify({'success': False, 'error': 'No target specified'})
+    # Whitelist of safe commands
+    cmds = {
+        'ping':    f"ping -c 4 -W 2 {target}",
+        'dig':     f"dig {target}",
+        'dig_any': f"dig {target} ANY",
+        'nslookup':f"nslookup {target}",
+        'trace':   f"traceroute -m 15 {target}",
+        'dnssec':  f"dig +dnssec {target}",
+        'reverse': f"dig -x {target}",
+        'whois':   f"whois {target}",
+        'check_control': "unbound-control status",
+        'check_conf':    "unbound-checkconf",
+        'dump_cache':    "unbound-control dump_cache",
+        'local_zones':   "unbound-control list_local_zones",
+        'local_data':    "unbound-control list_local_data",
+    }
+    cmd = cmds.get(tool)
+    if not cmd:
+        return jsonify({'success': False, 'error': 'Unknown tool'})
+    out, err, rc = run_cmd(cmd)
+    return jsonify({'success': True, 'output': out or err, 'rc': rc})
+
+
+    
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=False)
