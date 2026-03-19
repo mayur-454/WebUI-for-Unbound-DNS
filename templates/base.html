@@ -1238,14 +1238,16 @@
   <script>
     // ── UTILS ──
     function toast(msg, type = 'info', duration = 4000) {
-      const icons = {
-        success: '✓', error: '✗', info: 'ℹ', warning: '⚠'
-      };
+      const icons = { success: '✓', error: '✗', info: 'ℹ', warning: '⚠' };
       const t = document.createElement('div');
       t.className = `toast ${type}`;
       t.innerHTML = `<span>${icons[type] || 'ℹ'}</span><span>${msg}</span>`;
       document.getElementById('toast-container').appendChild(t);
-      setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(100%)'; t.style.transition = '0.3s'; setTimeout(() => t.remove(), 300); }, duration);
+      let paused = false;
+      const dismiss = () => { t.style.opacity = '0'; t.style.transform = 'translateX(100%)'; t.style.transition = '0.3s'; setTimeout(() => t.remove(), 300); };
+      t.addEventListener('mouseenter', () => { paused = true; });
+      t.addEventListener('mouseleave', () => { paused = false; setTimeout(() => { if (!paused) dismiss(); }, 800); });
+      t.timer = setTimeout(() => { if (!paused) dismiss(); }, duration);
     }
 
     async function apiPost(url, data) {
