@@ -94,7 +94,7 @@ def _template(request: Request, name: str, ctx: dict):
     ctx["request"] = request
     ctx["csrf_token"] = _csrf_token(request)
     ctx.setdefault("session", request.session)
-    return templates.TemplateResponse(name, ctx)
+    return templates.TemplateResponse(request=request, name=name, context=ctx)
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  INPUT VALIDATION HELPERS
