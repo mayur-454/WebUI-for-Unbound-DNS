@@ -3,8 +3,8 @@
 
 <div class="page-header">
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00c2ff" stroke-width="2">
-    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-    <polyline points="9 22 9 12 15 12 15 22" />
+    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+    <polyline points="9 22 9 12 15 12 15 22"/>
   </svg>
   <div>
     <h1>Dashboard</h1>
@@ -13,8 +13,8 @@
   <div style="margin-left:auto;" class="flex gap-1">
     <button class="btn btn-ghost btn-sm" onclick="refreshStats()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="23 4 23 10 17 10" />
-        <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
+        <polyline points="23 4 23 10 17 10"/>
+        <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
       </svg>
       Refresh
     </button>
@@ -25,11 +25,10 @@
 <div class="grid-4" style="margin-bottom:16px;">
   <div class="stat-tile {% if unb.active %}green{% else %}red{% endif %}">
     <div class="stat-label">Unbound Status</div>
-    <div class="stat-value {% if unb.active %}green{% else %}red{% endif %}" style="font-size:18px;">
+    <div class="stat-value {% if unb.active %}green{% else %}red{% endif %}" style="font-size:18px;" id="st-status">
       {% if unb.active %}● RUNNING{% else %}● STOPPED{% endif %}
     </div>
-    <div class="stat-sub">PID: {{ unb.pid or '—' }} · {% if unb.enabled %}Auto-start ON{% else %}Auto-start OFF{% endif
-      %}</div>
+    <div class="stat-sub" id="st-enabled-sub">PID: {{ unb.pid or '—' }} · {% if unb.enabled %}Auto-start ON{% else %}Auto-start OFF{% endif %}</div>
   </div>
   <div class="stat-tile blue">
     <div class="stat-label">Total Queries</div>
@@ -39,8 +38,7 @@
   <div class="stat-tile green">
     <div class="stat-label">Cache Hit Rate</div>
     <div class="stat-value green" id="st-hitrate">{{ unb.cache_hit_pct }}%</div>
-    <div class="stat-sub" id="st-hits">Hits: {{ "{:,}".format(unb.cache_hits) }} / Misses: {{
-      "{:,}".format(unb.cache_misses) }}</div>
+    <div class="stat-sub" id="st-hits">Hits: {{ "{:,}".format(unb.cache_hits) }} / Misses: {{ "{:,}".format(unb.cache_misses) }}</div>
   </div>
   <div class="stat-tile orange">
     <div class="stat-label">Avg Recursion</div>
@@ -57,74 +55,64 @@
     <div class="card">
       <div class="card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="2" y="3" width="20" height="14" rx="2" />
-          <line x1="8" y1="21" x2="16" y2="21" />
-          <line x1="12" y1="17" x2="12" y2="21" />
+          <rect x="2" y="3" width="20" height="14" rx="2"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
         </svg>
         <h3>Service Controls</h3>
-        <span class="badge {% if unb.active %}badge-green{% else %}badge-red{% endif %}" id="svc-badge">{{
-          unb.status|upper }}</span>
+        <span class="badge {% if unb.active %}badge-green{% else %}badge-red{% endif %}" id="svc-badge">
+          {{ unb.status|upper }}
+        </span>
       </div>
       <div class="card-body">
         <div class="btn-group" style="margin-bottom:12px;">
           <button class="btn btn-success btn-sm" onclick="svcAction('start')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polygon points="5 3 19 12 5 21 5 3" />
+              <polygon points="5 3 19 12 5 21 5 3"/>
             </svg>
             Start
           </button>
           <button class="btn btn-danger btn-sm" onclick="svcAction('stop')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="6" y="4" width="4" height="16" />
-              <rect x="14" y="4" width="4" height="16" />
+              <rect x="6" y="4" width="4" height="16"/>
+              <rect x="14" y="4" width="4" height="16"/>
             </svg>
             Stop
           </button>
           <button class="btn btn-primary btn-sm" onclick="svcAction('restart')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="23 4 23 10 17 10" />
-              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
             </svg>
             Restart
           </button>
           <button class="btn btn-orange btn-sm" onclick="svcAction('reload')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 2v6h-6" />
-              <path d="M3 12a9 9 0 0115-6.7L21 8" />
-              <path d="M3 22v-6h6" />
-              <path d="M21 12a9 9 0 01-15 6.7L3 16" />
+              <path d="M21 2v6h-6"/>
+              <path d="M3 12a9 9 0 0115-6.7L21 8"/>
+              <path d="M3 22v-6h6"/>
+              <path d="M21 12a9 9 0 01-15 6.7L3 16"/>
             </svg>
             Reload
           </button>
-          <button class="btn btn-ghost btn-sm" onclick="toggleEnable()">
+          <!-- BUG FIX: toggleEnable now correctly reads d.enabled (not d.active) -->
+          <button class="btn btn-ghost btn-sm" id="autostart-btn" onclick="toggleEnable()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 8 12 12 14 14" />
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 8 12 12 14 14"/>
             </svg>
             {{ "Disable" if unb.enabled else "Enable" }} Autostart
           </button>
         </div>
         <table class="info-table">
-          <tr>
-            <td>Version</td>
-            <td>{{ unb.version or '—' }}</td>
-          </tr>
-          <tr>
-            <td>Started</td>
-            <td>{{ unb.started or '—' }}</td>
-          </tr>
-          <tr>
-            <td>Memory Use</td>
-            <td>{{ "%.1f"|format(unb.mem_kb/1024) }} MB</td>
-          </tr>
-          <tr>
-            <td>Config File</td>
-            <td style="word-break:break-all;color:var(--accent)">{{ unb.config_file }}</td>
-          </tr>
+          <tr><td>Version</td><td>{{ unb.version or '—' }}</td></tr>
+          <tr><td>Started</td><td>{{ unb.started or '—' }}</td></tr>
+          <tr><td>Memory Use</td><td>{{ "%.1f"|format(unb.mem_kb/1024) }} MB</td></tr>
+          <tr><td>Config File</td><td style="word-break:break-all;color:var(--accent)">{{ unb.config_file }}</td></tr>
           <tr>
             <td>Enabled</td>
             <td>
-              <span class="badge {% if unb.enabled %}badge-green{% else %}badge-gray{% endif %}">
+              <span id="enabled-badge" class="badge {% if unb.enabled %}badge-green{% else %}badge-gray{% endif %}">
                 {{ "enabled" if unb.enabled else "disabled" }}
               </span>
             </td>
@@ -137,55 +125,25 @@
     <div class="card">
       <div class="card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-          <line x1="8" y1="21" x2="16" y2="21" />
-          <line x1="12" y1="17" x2="12" y2="21" />
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
         </svg>
         <h3>System Information</h3>
         <span class="text-xs text-muted text-mono" id="sys-time">{{ sys.datetime }}</span>
       </div>
       <div class="card-body">
         <table class="info-table">
-          <tr>
-            <td>Hostname</td>
-            <td>{{ sys.hostname }}</td>
-          </tr>
-          <tr>
-            <td>FQDN</td>
-            <td>{{ sys.fqdn }}</td>
-          </tr>
-          <tr>
-            <td>OS</td>
-            <td>{{ sys.os or '—' }}</td>
-          </tr>
-          <tr>
-            <td>Kernel</td>
-            <td>{{ sys.kernel }}</td>
-          </tr>
-          <tr>
-            <td>Architecture</td>
-            <td>{{ sys.arch }}</td>
-          </tr>
-          <tr>
-            <td>CPU Model</td>
-            <td>{{ sys.cpu_model or '—' }}</td>
-          </tr>
-          <tr>
-            <td>CPU Cores</td>
-            <td>{{ sys.cpu_count }}</td>
-          </tr>
-          <tr>
-            <td>Uptime</td>
-            <td>{{ sys.uptime_raw }}</td>
-          </tr>
-          <tr>
-            <td>Since</td>
-            <td>{{ sys.uptime_since }}</td>
-          </tr>
-          <tr>
-            <td>Load Avg</td>
-            <td class="text-orange">{{ sys.load }}</td>
-          </tr>
+          <tr><td>Hostname</td><td>{{ sys.hostname }}</td></tr>
+          <tr><td>FQDN</td><td>{{ sys.fqdn }}</td></tr>
+          <tr><td>OS</td><td>{{ sys.os or '—' }}</td></tr>
+          <tr><td>Kernel</td><td>{{ sys.kernel }}</td></tr>
+          <tr><td>Architecture</td><td>{{ sys.arch }}</td></tr>
+          <tr><td>CPU Model</td><td>{{ sys.cpu_model or '—' }}</td></tr>
+          <tr><td>CPU Cores</td><td>{{ sys.cpu_count }}</td></tr>
+          <tr><td>Uptime</td><td>{{ sys.uptime_raw }}</td></tr>
+          <tr><td>Since</td><td>{{ sys.uptime_since }}</td></tr>
+          <tr><td>Load Avg</td><td class="text-orange">{{ sys.load }}</td></tr>
         </table>
       </div>
     </div>
@@ -194,8 +152,8 @@
     <div class="card">
       <div class="card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="1" y="5" width="22" height="14" rx="7" ry="7" />
-          <circle cx="12" cy="12" r="3" />
+          <rect x="1" y="5" width="22" height="14" rx="7" ry="7"/>
+          <circle cx="12" cy="12" r="3"/>
         </svg>
         <h3>Network Interfaces</h3>
       </div>
@@ -207,23 +165,20 @@
             <td class="text-accent">{{ iface.addr }}</td>
           </tr>
           {% else %}
-          <tr>
-            <td colspan="2" class="text-muted">No interfaces found</td>
-          </tr>
+          <tr><td colspan="2" class="text-muted">No interfaces found</td></tr>
           {% endfor %}
         </table>
       </div>
     </div>
 
-
     <!-- LOG VIEWER -->
     <div class="card">
       <div class="card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-          <line x1="16" y1="13" x2="8" y2="13" />
-          <line x1="16" y1="17" x2="8" y2="17" />
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
         </svg>
         <h3>Recent Logs</h3>
         <button class="btn btn-ghost btn-sm" onclick="refreshLogs()">Refresh</button>
@@ -242,9 +197,9 @@
     <div class="card">
       <div class="card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M22 12H2" />
-          <path d="M5 12V7a7 7 0 0114 0v5" />
-          <rect x="2" y="12" width="20" height="8" rx="2" />
+          <path d="M22 12H2"/>
+          <path d="M5 12V7a7 7 0 0114 0v5"/>
+          <rect x="2" y="12" width="20" height="8" rx="2"/>
         </svg>
         <h3>Memory &amp; Disk</h3>
       </div>
@@ -256,8 +211,7 @@
             <span class="text-xs text-mono text-orange">{{ sys.mem_pct }}%</span>
           </div>
           <div class="progress-bar">
-            <div
-              class="progress-fill {% if sys.mem_pct > 85 %}red{% elif sys.mem_pct > 60 %}orange{% else %}blue{% endif %}"
+            <div class="progress-fill {% if sys.mem_pct > 85 %}red{% elif sys.mem_pct > 60 %}orange{% else %}blue{% endif %}"
               style="width:{{ sys.mem_pct }}%"></div>
           </div>
           <div class="text-xs text-muted text-mono" style="margin-top:4px;">
@@ -267,7 +221,6 @@
           </div>
         </div>
         {% endif %}
-
         {% if sys.disk_total is defined %}
         <div>
           <div class="flex-center" style="justify-content:space-between;margin-bottom:4px;">
@@ -275,8 +228,7 @@
             <span class="text-xs text-mono text-orange">{{ sys.disk_pct }}%</span>
           </div>
           <div class="progress-bar">
-            <div
-              class="progress-fill {% if sys.disk_pct|int > 85 %}red{% elif sys.disk_pct|int > 60 %}orange{% else %}green{% endif %}"
+            <div class="progress-fill {% if sys.disk_pct|int > 85 %}red{% elif sys.disk_pct|int > 60 %}orange{% else %}green{% endif %}"
               style="width:{{ sys.disk_pct }}%"></div>
           </div>
           <div class="text-xs text-muted text-mono" style="margin-top:4px;">
@@ -293,9 +245,9 @@
     <div class="card">
       <div class="card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <ellipse cx="12" cy="5" rx="9" ry="3" />
-          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
-          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+          <ellipse cx="12" cy="5" rx="9" ry="3"/>
+          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
         </svg>
         <h3>Cache Statistics</h3>
       </div>
@@ -303,14 +255,12 @@
         <div class="grid-2" style="gap:10px;margin-bottom:12px;">
           <div style="background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;padding:10px;">
             <div class="stat-label">RRset Cache</div>
-            <div class="stat-value blue" style="font-size:20px;" id="st-rrset">{{ "{:,}".format(unb.rrset_cache_count)
-              }}</div>
+            <div class="stat-value blue" style="font-size:20px;" id="st-rrset">{{ "{:,}".format(unb.rrset_cache_count) }}</div>
             <div class="stat-sub">entries</div>
           </div>
           <div style="background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;padding:10px;">
             <div class="stat-label">Msg Cache</div>
-            <div class="stat-value orange" style="font-size:20px;" id="st-msg">{{ "{:,}".format(unb.msg_cache_count) }}
-            </div>
+            <div class="stat-value orange" style="font-size:20px;" id="st-msg">{{ "{:,}".format(unb.msg_cache_count) }}</div>
             <div class="stat-sub">entries</div>
           </div>
           <div style="background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;padding:10px;">
@@ -325,59 +275,53 @@
           </div>
         </div>
         <table class="info-table">
-          <tr>
-            <td>Unwanted Replies</td>
-            <td class="text-red">{{ "{:,}".format(unb.unwanted_replies) }}</td>
-          </tr>
-          <tr>
-            <td>Unwanted Queries</td>
-            <td class="text-red">{{ "{:,}".format(unb.unwanted_queries) }}</td>
-          </tr>
+          <tr><td>Unwanted Replies</td><td class="text-red" id="st-unwanted-replies">{{ "{:,}".format(unb.unwanted_replies) }}</td></tr>
+          <tr><td>Unwanted Queries</td><td class="text-red" id="st-unwanted-queries">{{ "{:,}".format(unb.unwanted_queries) }}</td></tr>
         </table>
         <div class="btn-group mt-1">
           <button class="btn btn-ghost btn-sm"
             onclick="apiPost('/api/system/flush_cache',{}).then(d=>toast(d.success?'Cache flushed':d.error,d.success?'success':'error'))">
             Flush Cache
           </button>
-          <button class="btn btn-ghost btn-sm" onclick="dumpCache()">
-            Dump Cache
-          </button>
+          <button class="btn btn-ghost btn-sm" onclick="dumpCache()">Dump Cache</button>
         </div>
       </div>
     </div>
 
-    <!-- QUICK STATS TABLE -->
+    <!-- DETAILED STATS TABLE -->
     <div class="card">
       <div class="card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
         </svg>
         <h3>Detailed Stats</h3>
+        <!-- BUG FIX: refresh button now properly updates the table via refreshStats() -->
         <button class="btn btn-ghost btn-sm" onclick="refreshStats()">Refresh</button>
       </div>
       <div class="card-body">
-        <table class="info-table" id="stats-table">
-          {% for k,v in unb.stats.items() %}
-          {% if loop.index <= 30 %} <tr>
-            <td>{{ k }}</td>
-            <td>{{ v }}</td>
-            </tr>
-            {% endif %}
-            {% endfor %}
-        </table>
-        {% if unb.stats|length == 0 %}
+        {% if unb.stats_error %}
         <div class="alert alert-warning">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          {{ unb.stats_error }} — Make sure unbound-control is configured and Unbound is running.
+        </div>
+        {% endif %}
+        <table class="info-table" id="stats-table">
+          {% for k,v in unb.stats.items() %}{% if loop.index <= 30 %}
+          <tr><td>{{ k }}</td><td>{{ v }}</td></tr>
+          {% endif %}{% endfor %}
+        </table>
+        {% if not unb.stats %}
+        <div class="alert alert-warning">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
           No stats available. Make sure <code>unbound-control</code> is configured and Unbound is running.
         </div>
         {% endif %}
       </div>
     </div>
-
 
   </div><!-- /right -->
 </div><!-- /grid-2 -->
@@ -388,8 +332,7 @@
     <div class="modal-title">DNS Cache Dump</div>
     <div class="log-viewer" id="cache-dump-content" style="min-height:200px;"></div>
     <div style="margin-top:12px;text-align:right;">
-      <button class="btn btn-ghost"
-        onclick="document.getElementById('modal-cache').classList.remove('show')">Close</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('modal-cache').classList.remove('show')">Close</button>
     </div>
   </div>
 </div>
@@ -397,49 +340,54 @@
 {% endblock %}
 {% block scripts %}
 <script>
-  async function refreshStats() {
-    toast('Refreshing statistics…', 'info');
-    try {
-      const d = await fetch('/api/stats').then(r => r.json());
-      document.getElementById('st-queries').textContent = Number(d.total_queries).toLocaleString();
-      document.getElementById('st-hitrate').textContent = d.cache_hit_pct + '%';
-      document.getElementById('st-hits').textContent = `Hits: ${Number(d.cache_hits).toLocaleString()} / Misses: ${Number(d.cache_misses).toLocaleString()}`;
-
-      document.getElementById('st-recur').textContent = parseFloat(d.recursion_avg).toFixed(1) + ' ms';
-
-      document.getElementById('st-rrset').textContent = Number(d.rrset_cache_count).toLocaleString();
-      document.getElementById('st-msg').textContent = Number(d.msg_cache_count).toLocaleString();
-      toast('Stats refreshed', 'success');
-    } catch (e) { toast('Failed to refresh stats', 'error'); }
-  }
+  // refreshStats() is defined in base.html — it calls updateUnboundStatus(true)
+  // which updates every stat tile, status pill, table, and PID/autostart fields
+  // in one fetch. No duplicate code here.
 
   async function refreshLogs() {
-    const el = document.getElementById('log-viewer');
-    el.textContent = 'Loading…';
+    var el = document.getElementById('log-viewer');
+    el.textContent = 'Loading\u2026';
     try {
-      const d = await fetch('/api/logs?n=100').then(r => r.json());
+      var d = await fetch('/api/logs?n=100', { headers: { 'X-Requested-With': 'XMLHttpRequest' } }).then(function(r){ return r.json(); });
       el.textContent = d.logs || '(no log entries found)';
       el.scrollTop = el.scrollHeight;
-    } catch (e) { el.textContent = 'Failed to load logs'; }
+    } catch(e) { el.textContent = 'Failed to load logs'; }
   }
 
   async function dumpCache() {
-    toast('Dumping cache…', 'info');
-    const d = await fetch('/api/system/dump_cache', { method: 'POST' }).then(r => r.json());
+    toast('Dumping cache\u2026', 'info');
+    var d = await apiPost('/api/system/dump_cache', {});
     document.getElementById('cache-dump-content').textContent = d.output || d.error || '(empty)';
     document.getElementById('modal-cache').classList.add('show');
   }
 
+  // toggleEnable: reads current enabled state from the last known API data
+  // by fetching stats with redirect:manual so it also detects session expiry.
   async function toggleEnable() {
-    const d = await fetch('/api/stats').then(r => r.json());
-    const action = d.active ? 'disable' : 'enable';
-    const res = await apiPost('/api/service/' + action, {});
-    toast(res.success ? `Unbound ${action}d` : `Failed: ${res.error}`, res.success ? 'success' : 'error');
-    setTimeout(() => location.reload(), 1500);
+    try {
+      var r = await fetch('/api/stats', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        redirect: 'manual'
+      });
+      if (r.type === 'opaqueredirect' || r.status === 307 || r.status === 302 || r.status === 403) {
+        _handleSessionExpiry(); return;
+      }
+      var d = await r.json();
+      var action = d.enabled ? 'disable' : 'enable';
+      var res = await apiPost('/api/service/' + action, {});
+      if (res.success) {
+        toast('Unbound autostart ' + action + 'd', 'success');
+        // Refresh all UI elements after a short delay
+        setTimeout(function(){ updateUnboundStatus(false); }, 800);
+      } else {
+        toast('Failed: ' + (res.error || res.detail || 'unknown'), 'error', 6000);
+      }
+    } catch(e) {
+      toast('Failed to toggle autostart: ' + e, 'error');
+    }
   }
 
-  // close modal on overlay click
-  document.getElementById('modal-cache').addEventListener('click', function (e) {
+  document.getElementById('modal-cache').addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('show');
   });
 

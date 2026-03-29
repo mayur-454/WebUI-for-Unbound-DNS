@@ -3,9 +3,8 @@
 
 <div class="page-header">
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff7a1a" stroke-width="2">
-    <circle cx="12" cy="12" r="3" />
-    <path
-      d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
   </svg>
   <div>
     <h1>Settings</h1>
@@ -22,7 +21,7 @@
     <div class="card">
       <div class="card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-          <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
+          <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
         </svg>
         <h3>Config File Management</h3>
       </div>
@@ -30,18 +29,14 @@
         <div class="form-section-title">Active Configuration File</div>
         <div style="margin-bottom:14px;">
           <div class="text-xs text-muted text-mono" style="margin-bottom:6px;">CURRENTLY LOADED</div>
-          <div
-            style="background:var(--bg-dark);border:1px solid var(--accent3);border-radius:4px;padding:10px 12px;font-family:var(--mono);font-size:13px;color:var(--accent);"
-            id="curr-file-display">
-            {{ cfg_file }}
-          </div>
+          <div style="background:var(--bg-dark);border:1px solid var(--accent3);border-radius:4px;padding:10px 12px;font-family:var(--mono);font-size:13px;color:var(--accent);"
+            id="curr-file-display">{{ cfg_file }}</div>
         </div>
 
         <div class="form-section-title">Switch Config File</div>
         <div style="margin-bottom:14px;">
           <select class="form-control" id="cfg-file-select" style="margin-bottom:8px;">
-            <option value="/etc/unbound/unbound.conf" {% if cfg_file=='/etc/unbound/unbound.conf' %}selected{% endif %}>
-              /etc/unbound/unbound.conf</option>
+            <option value="/etc/unbound/unbound.conf" {% if cfg_file=='/etc/unbound/unbound.conf' %}selected{% endif %}>/etc/unbound/unbound.conf</option>
             {% for f in conf_d_files %}
             <option value="{{ f }}" {% if cfg_file==f %}selected{% endif %}>{{ f }}</option>
             {% endfor %}
@@ -49,7 +44,7 @@
           <div class="btn-group">
             <button class="btn btn-primary btn-sm" onclick="loadSelectedFile()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
+                <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
               </svg>
               Load File
             </button>
@@ -59,8 +54,7 @@
 
         <div class="form-section-title">Custom Path</div>
         <div class="input-group" style="margin-bottom:12px;">
-          <input type="text" class="form-control" id="custom-path"
-            placeholder="/etc/unbound/unbound.conf.d/custom.conf">
+          <input type="text" class="form-control" id="custom-path" placeholder="/etc/unbound/unbound.conf.d/custom.conf">
           <button class="btn btn-orange" onclick="loadCustomPath()">Load</button>
         </div>
 
@@ -82,11 +76,10 @@
             </td>
             <td style="width:1%;white-space:nowrap;">
               <div class="btn-group">
-                <button class="btn btn-ghost btn-sm" onclick="switchFile('{{ f }}')">Load</button>
+                <button class="btn btn-ghost btn-sm" onclick="switchFile('{{ f | e }}')">Load</button>
                 {% if f != '/etc/unbound/unbound.conf' %}
-                <button class="btn btn-danger btn-sm" onclick="deleteFile('{{ f }}')">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
+                <button class="btn btn-danger btn-sm" onclick="deleteFile('{{ f | e }}')">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                   </svg>
@@ -105,18 +98,17 @@
     <div class="card">
       <div class="card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
         </svg>
         <h3>Config Validation</h3>
       </div>
       <div class="card-body">
         <p class="text-sm text-dim" style="margin-bottom:12px;">
-          Run <code>unbound-checkconf</code> to validate the current configuration file for syntax errors before
-          applying.
+          Run <code>unbound-checkconf</code> to validate the current configuration file for syntax errors before applying.
         </p>
         <button class="btn btn-primary" onclick="validateConfig()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-            <polyline points="20 6 9 17 4 12" />
+            <polyline points="20 6 9 17 4 12"/>
           </svg>
           Validate Config
         </button>
@@ -124,28 +116,26 @@
       </div>
     </div>
 
-
     <!-- BACKUPS -->
     <div class="card">
       <div class="card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-          <polyline points="7 10 12 15 17 10" />
-          <line x1="12" y1="15" x2="12" y2="3" />
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
         </svg>
         <h3>Backups</h3>
       </div>
       <div class="card-body">
-
         <div class="form-section-title">Create Backup</div>
         <div style="display:flex;gap:8px;margin-bottom:20px;align-items:center;">
           <input class="form-control" id="bk-label" placeholder="Label e.g. before-change (optional)" style="flex:1;"
             onkeydown="if(event.key==='Enter') createBackup()">
           <button class="btn btn-primary btn-sm" onclick="createBackup()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
             Backup Now
           </button>
@@ -155,8 +145,8 @@
           <span>Saved Backups</span>
           <button class="btn btn-ghost btn-sm" onclick="loadBackups()" id="bk-refresh-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
-              <polyline points="23 4 23 10 17 10" />
-              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
             </svg>
             Refresh List
           </button>
@@ -164,56 +154,58 @@
         <div id="bk-list" style="margin-top:8px;">
           <span class="text-muted" style="font-size:12px;">Click Refresh List to load backups.</span>
         </div>
-
       </div>
     </div>
 
+    <!-- CHANGE PASSWORD -->
+    <div class="card">
+      <div class="card-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0110 0v4"/>
+        </svg>
+        <h3>Change Password</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-group">
+          <label class="form-label">New Password (min. 8 characters)</label>
+          <input class="form-control" type="password" id="new-pw" placeholder="New password" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm Password</label>
+          <input class="form-control" type="password" id="confirm-pw" placeholder="Confirm password" autocomplete="new-password">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="changePassword()">Update Password</button>
+      </div>
+    </div>
 
     <!-- ABOUT -->
     <div class="card">
       <div class="card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="8" x2="12" y2="12" />
-          <line x1="12" y1="16" x2="12.01" y2="16" />
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
         </svg>
         <h3>About</h3>
       </div>
       <div class="card-body">
         <table class="info-table">
-          <tr>
-            <td>Application</td>
-            <td>Unbound DNS Web GUI</td>
-          </tr>
-          <tr>
-            <td>Description</td>
-            <td>pfSense/OpenWrt-style management interface for Unbound DNS on Debian</td>
-          </tr>
-          <tr>
-            <td>Config Dir</td>
-            <td class="text-accent">/etc/unbound/unbound.conf.d/</td>
-          </tr>
-          <tr>
-            <td>Default Config</td>
-            <td class="text-accent">/etc/unbound/unbound.conf</td>
-          </tr>
-          <tr>
-            <td>Service</td>
-            <td class="text-accent">unbound (systemd)</td>
-          </tr>
-          <tr>
-            <td>GUI Port</td>
-            <td class="text-orange">8080</td>
-          </tr>
+          <tr><td>Application</td><td>Unbound DNS Web GUI</td></tr>
+          <tr><td>Framework</td><td>FastAPI / Uvicorn</td></tr>
+          <tr><td>Config Dir</td><td class="text-accent">/etc/unbound/unbound.conf.d/</td></tr>
+          <tr><td>Default Config</td><td class="text-accent">/etc/unbound/unbound.conf</td></tr>
+          <tr><td>Service</td><td class="text-accent">unbound (systemd)</td></tr>
+          <tr><td>GUI Port</td><td class="text-orange">8443 (HTTPS) / 8080 (redirect)</td></tr>
         </table>
         <div class="alert alert-info mt-1" style="margin-top:12px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
           Requires <code>sudo</code> privileges (NOPASSWD) for <code>tee</code>, <code>systemctl</code>, and
-          <code>rm</code> to function. See README.
+          <code>shutdown</code> to function.
         </div>
       </div>
     </div>
@@ -224,10 +216,11 @@
   <div>
 
     <!-- UNBOUND SERVICE CONTROLS -->
+    <!-- svc-badge-settings is updated by the unified updateUnboundStatus() in base.html -->
     <div class="card">
       <div class="card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-          <polygon points="5 3 19 12 5 21 5 3" />
+          <polygon points="5 3 19 12 5 21 5 3"/>
         </svg>
         <h3>Unbound Service</h3>
         <span class="badge" id="svc-badge-settings">checking…</span>
@@ -236,30 +229,30 @@
         <div class="grid-2" style="gap:10px;margin-bottom:16px;">
           <button class="btn btn-success" style="justify-content:center;" onclick="svcAction('start')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-              <polygon points="5 3 19 12 5 21 5 3" />
+              <polygon points="5 3 19 12 5 21 5 3"/>
             </svg>
             Start
           </button>
           <button class="btn btn-danger" style="justify-content:center;" onclick="svcAction('stop')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-              <rect x="6" y="4" width="4" height="16" />
-              <rect x="14" y="4" width="4" height="16" />
+              <rect x="6" y="4" width="4" height="16"/>
+              <rect x="14" y="4" width="4" height="16"/>
             </svg>
             Stop
           </button>
           <button class="btn btn-primary" style="justify-content:center;" onclick="svcAction('restart')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-              <polyline points="23 4 23 10 17 10" />
-              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
             </svg>
             Restart
           </button>
           <button class="btn btn-orange" style="justify-content:center;" onclick="svcAction('reload')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-              <path d="M21 2v6h-6" />
-              <path d="M3 12a9 9 0 0115-6.7L21 8" />
-              <path d="M3 22v-6h6" />
-              <path d="M21 12a9 9 0 01-15 6.7L3 16" />
+              <path d="M21 2v6h-6"/>
+              <path d="M3 12a9 9 0 0115-6.7L21 8"/>
+              <path d="M3 22v-6h6"/>
+              <path d="M21 12a9 9 0 01-15 6.7L3 16"/>
             </svg>
             Reload
           </button>
@@ -272,8 +265,7 @@
         </div>
 
         <div class="form-section-title">Service Status</div>
-        <button class="btn btn-ghost btn-sm" id="svc-status-btn" onclick="toggleServiceStatus()">Show Full
-          Status</button>
+        <button class="btn btn-ghost btn-sm" id="svc-status-btn" onclick="toggleServiceStatus()">Show Full Status</button>
         <div class="log-viewer mt-1" id="svc-status-output" style="min-height:40px;display:none;"></div>
       </div>
     </div>
@@ -282,37 +274,33 @@
     <div class="card">
       <div class="card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-          <ellipse cx="12" cy="5" rx="9" ry="3" />
-          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
-          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+          <ellipse cx="12" cy="5" rx="9" ry="3"/>
+          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
         </svg>
         <h3>Cache Management</h3>
       </div>
       <div class="card-body">
         <div class="btn-group" style="margin-bottom:12px;flex-wrap:wrap;">
-          <button class="btn btn-orange btn-sm"
-            onclick="cacheAction('flush_cache','Flushing DNS cache…','Cache flushed')">
+          <button class="btn btn-orange btn-sm" onclick="cacheAction('flush_cache','Flushing DNS cache…','Cache flushed')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-              <polyline points="1 4 1 10 7 10" />
-              <path d="M3.51 15a9 9 0 102.13-9.36L1 10" />
+              <polyline points="1 4 1 10 7 10"/>
+              <path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
             </svg>
             Flush Cache
           </button>
-          <button class="btn btn-ghost btn-sm"
-            onclick="cacheAction('flush_dns','Reloading Unbound…','Reload complete')">
+          <button class="btn btn-ghost btn-sm" onclick="cacheAction('flush_dns','Reloading Unbound…','Reload complete')">
             Reload (flush_zone .)
           </button>
-          <button class="btn btn-ghost btn-sm" onclick="dumpCacheSettings()">
-            Dump Cache to Log
-          </button>
+          <button class="btn btn-ghost btn-sm" onclick="dumpCacheSettings()">Dump Cache to Log</button>
         </div>
         <div class="alert alert-warning">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-            <line x1="12" y1="9" x2="12" y2="13" />
-            <line x1="12" y1="17" x2="12.01" y2="17" />
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
-          Flushing cache causes temporary increase in DNS latency while entries are re-resolved.
+          Flushing cache causes a temporary increase in DNS latency while entries are re-resolved.
         </div>
       </div>
     </div>
@@ -321,33 +309,33 @@
     <div class="card">
       <div class="card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-          <rect x="2" y="3" width="20" height="14" rx="2" />
-          <line x1="8" y1="21" x2="16" y2="21" />
-          <line x1="12" y1="17" x2="12" y2="21" />
+          <rect x="2" y="3" width="20" height="14" rx="2"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
         </svg>
         <h3>System Controls</h3>
       </div>
       <div class="card-body">
         <div class="alert alert-danger" style="margin-bottom:12px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-            <line x1="12" y1="9" x2="12" y2="13" />
-            <line x1="12" y1="17" x2="12.01" y2="17" />
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
           These actions affect the entire system!
         </div>
         <div class="btn-group" style="flex-direction:column;align-items:flex-start;gap:10px;">
           <button class="btn btn-ghost" onclick="sysAction('restart_networking','Restart networking service?')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-              <rect x="1" y="5" width="22" height="14" rx="7" />
-              <circle cx="12" cy="12" r="3" />
+              <rect x="1" y="5" width="22" height="14" rx="7"/>
+              <circle cx="12" cy="12" r="3"/>
             </svg>
             Restart Networking
           </button>
           <button class="btn btn-danger" onclick="sysAction('reboot','REBOOT the entire system?')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-              <polyline points="23 4 23 10 17 10" />
-              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
             </svg>
             Reboot System
           </button>
@@ -360,8 +348,8 @@
     <div class="card">
       <div class="card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
         </svg>
         <h3>Live Logs</h3>
         <div class="btn-group">
@@ -378,8 +366,7 @@
         <div class="log-viewer" id="log-viewer-settings" style="max-height:400px;">Loading…</div>
         <div class="btn-group mt-1">
           <button class="btn btn-ghost btn-sm" onclick="scrollLogsBottom()">Scroll to Bottom</button>
-          <button class="btn btn-ghost btn-sm" id="auto-scroll-btn" onclick="toggleAutoScroll()">Auto-scroll:
-            OFF</button>
+          <button class="btn btn-ghost btn-sm" id="auto-scroll-btn" onclick="toggleAutoScroll()">Auto-scroll: OFF</button>
         </div>
       </div>
     </div>
@@ -390,16 +377,8 @@
 {% endblock %}
 {% block scripts %}
 <script>
-  // Update service badge
-  async function updateSettingsBadge() {
-    const d = await fetch('/api/stats').then(r => r.json()).catch(() => ({}));
-    const el = document.getElementById('svc-badge-settings');
-    if (el) {
-      el.className = 'badge ' + (d.active ? 'badge-green' : 'badge-red');
-      el.textContent = d.active ? 'running' : 'stopped';
-    }
-  }
-  updateSettingsBadge();
+  // Note: svc-badge-settings is now updated by the shared updateUnboundStatus()
+  // in base.html — no separate updateSettingsBadge() needed.
 
   // File management
   async function loadSelectedFile() {
@@ -422,7 +401,7 @@
       const sb = document.getElementById('sb-cfgfile');
       if (sb) sb.textContent = file.replace('/etc/unbound/', '…/');
     } else {
-      toast('Failed: ' + d.error, 'error');
+      toast('Failed: ' + (d.error || d.detail || 'unknown'), 'error');
     }
   }
 
@@ -436,7 +415,7 @@
       document.getElementById('curr-file-display').textContent = d.file;
       setTimeout(() => location.reload(), 1000);
     } else {
-      toast('Failed: ' + d.error, 'error');
+      toast('Failed: ' + (d.error || d.detail || 'unknown'), 'error');
     }
   }
 
@@ -444,7 +423,23 @@
     if (!confirm('Delete ' + file + '?\n\nThis cannot be undone.')) return;
     const d = await apiPost('/api/config/delete_file', { file });
     if (d.success) { toast('Deleted: ' + file, 'success'); setTimeout(() => location.reload(), 800); }
-    else toast('Failed: ' + d.error, 'error');
+    else toast('Failed: ' + (d.error || d.detail || 'unknown'), 'error');
+  }
+
+  // Change password
+  async function changePassword() {
+    const pw  = document.getElementById('new-pw').value;
+    const pw2 = document.getElementById('confirm-pw').value;
+    if (!pw) { toast('Enter a new password', 'warning'); return; }
+    if (pw !== pw2) { toast('Passwords do not match', 'warning'); return; }
+    const d = await apiPost('/api/change_password', { password: pw });
+    if (d.success) {
+      toast('Password updated successfully', 'success');
+      document.getElementById('new-pw').value = '';
+      document.getElementById('confirm-pw').value = '';
+    } else {
+      toast('Failed: ' + (d.error || d.detail || 'unknown'), 'error');
+    }
   }
 
   // Validation
@@ -453,7 +448,10 @@
     const el = document.getElementById('validate-output');
     el.style.display = 'block';
     el.textContent = 'Running unbound-checkconf…';
-    const d = await fetch('/api/config/validate', { method: 'POST' }).then(r => r.json());
+    const d = await fetch('/api/config/validate', {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': _csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
+    }).then(r => r.json());
     el.textContent = d.output || (d.valid ? 'OK — config is valid' : 'Validation failed');
     if (d.valid) toast('Config is valid ✓', 'success');
     else toast('Validation failed', 'error', 6000);
@@ -461,7 +459,7 @@
 
   // Service status
   async function toggleServiceStatus() {
-    const el = document.getElementById('svc-status-output');
+    const el  = document.getElementById('svc-status-output');
     const btn = document.getElementById('svc-status-btn');
     if (el.style.display !== 'none') {
       el.style.display = 'none';
@@ -471,20 +469,23 @@
     el.style.display = 'block';
     el.textContent = 'Fetching status…';
     btn.textContent = 'Hide Full Status';
-    const d = await fetch('/api/service/status').then(r => r.json());
+    const d = await fetch('/api/service/status', {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    }).then(r => r.json());
     el.textContent = d.output || '(no output)';
   }
+
   // Cache actions
   async function cacheAction(action, msgStart, msgEnd) {
     toast(msgStart, 'info');
     const d = await apiPost('/api/system/' + action, {});
-    toast(d.success ? msgEnd : ('Failed: ' + d.error), d.success ? 'success' : 'error');
+    toast(d.success ? msgEnd : ('Failed: ' + (d.error || d.detail)), d.success ? 'success' : 'error');
   }
 
   async function dumpCacheSettings() {
     toast('Dumping cache…', 'info');
     const d = await apiPost('/api/system/dump_cache', {});
-    toast(d.success ? 'Cache dumped to log' : 'Failed: ' + d.error, d.success ? 'success' : 'error');
+    toast(d.success ? 'Cache dumped to log' : 'Failed: ' + (d.error || d.detail), d.success ? 'success' : 'error');
   }
 
   // System actions
@@ -496,7 +497,7 @@
     el.textContent = 'Running…';
     const d = await apiPost('/api/system/' + action, {});
     el.textContent = d.output || d.error || d.message || 'Done';
-    toast(d.success ? 'Action complete' : ('Failed: ' + d.error), d.success ? 'success' : 'error');
+    toast(d.success ? 'Action complete' : ('Failed: ' + (d.error || d.detail)), d.success ? 'success' : 'error');
   }
 
   // Logs
@@ -504,16 +505,17 @@
   let logInterval = null;
 
   async function refreshLogs() {
-    const n = document.getElementById('log-lines')?.value || 100;
+    const n  = document.getElementById('log-lines')?.value || 100;
     const el = document.getElementById('log-viewer-settings');
-    const d = await fetch('/api/logs?n=' + n).then(r => r.json());
+    const d  = await fetch('/api/logs?n=' + n, {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    }).then(r => r.json());
     el.textContent = d.logs || '(no log entries found)';
     if (autoScroll) el.scrollTop = el.scrollHeight;
   }
 
   function scrollLogsBottom() {
-    const el = document.getElementById('log-viewer-settings');
-    el.scrollTop = el.scrollHeight;
+    document.getElementById('log-viewer-settings').scrollTop = 999999;
   }
 
   function toggleAutoScroll() {
@@ -521,11 +523,8 @@
     const btn = document.getElementById('auto-scroll-btn');
     btn.textContent = 'Auto-scroll: ' + (autoScroll ? 'ON' : 'OFF');
     btn.className = autoScroll ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
-    if (autoScroll) {
-      logInterval = setInterval(refreshLogs, 3000);
-    } else {
-      clearInterval(logInterval);
-    }
+    if (autoScroll) { logInterval = setInterval(refreshLogs, 3000); }
+    else { clearInterval(logInterval); }
   }
 
   function browseCustomPath() {
@@ -533,14 +532,9 @@
     if (p) document.getElementById('custom-path').value = p;
   }
 
-  refreshLogs();
-  loadBackups(); // loading the buckup list
-
-  // ── BACKUP FUNCTIONS ──────────────────────────────────────────────────────────
-
+  // Backups
   async function createBackup() {
     const label = (document.getElementById('bk-label').value || '').trim();
-    const btn = document.querySelector('#bk-list').previousElementSibling.querySelector('button');
     toast('Creating backup…', 'info');
     try {
       const d = await apiPost('/api/backup/create', { label });
@@ -549,87 +543,67 @@
         document.getElementById('bk-label').value = '';
         loadBackups();
       } else {
-        toast('Failed: ' + (d.error || 'unknown error'), 'error');
+        toast('Failed: ' + (d.error || d.detail || 'unknown'), 'error');
       }
-    } catch (e) {
-      toast('Request failed: ' + e, 'error');
-    }
+    } catch(e) { toast('Request failed: ' + e, 'error'); }
   }
 
   async function loadBackups() {
-    const el = document.getElementById('bk-list');
+    const el  = document.getElementById('bk-list');
     const btn = document.getElementById('bk-refresh-btn');
     el.innerHTML = '<span style="font-size:12px;color:var(--text-muted);">Loading…</span>';
     if (btn) btn.disabled = true;
     try {
-      const d = await fetch('/api/backup/list').then(r => r.json());
+      const d = await fetch('/api/backup/list', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      }).then(r => r.json());
       if (btn) btn.disabled = false;
       if (!d.success) {
-        el.innerHTML = '<span style="font-size:12px;color:var(--red);">Error: ' + (d.error || 'unknown') + '</span>';
+        el.textContent = 'Error: ' + (d.error || 'unknown');
         return;
       }
       if (!d.backups || d.backups.length === 0) {
         el.innerHTML = '<span style="font-size:12px;color:var(--text-muted);">No backups found. Create one above.</span>';
         return;
       }
-      el.innerHTML = d.backups.map(b => `
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;">
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-family:monospace;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${b.filename}</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${b.modified} &mdash; ${formatBytes(b.size)}</div>
-        </div>
-        <a href="/api/backup/download/${encodeURIComponent(b.filename)}" class="btn btn-ghost btn-sm" title="Download">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        </a>
-        <button class="btn btn-primary btn-sm" onclick="restoreBackup('${escHtml(b.filename)}')" title="Restore this backup">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
-              <polyline points="23 4 23 10 17 10"></polyline>
-              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path>
-          </svg>
-        </button>
-        <button class="btn btn-danger btn-sm" onclick="deleteBackup('${escHtml(b.filename)}')" title="Delete this backup">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="3 6 5 6 21 6"></polyline>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-          </svg>
-        </button>
-      </div>`).join('');
-    } catch (e) {
+      el.innerHTML = d.backups.map(b => {
+        const fn = escHtml(b.filename);
+        return `
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-family:monospace;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${fn}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${escHtml(b.modified)} &mdash; ${formatBytes(b.size)}</div>
+          </div>
+          <a href="/api/backup/download/${encodeURIComponent(b.filename)}" class="btn btn-ghost btn-sm" title="Download">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </a>
+          <button class="btn btn-primary btn-sm" onclick="restoreBackup('${fn}')" title="Restore">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="deleteBackup('${fn}')" title="Delete">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </div>`;
+      }).join('');
+    } catch(e) {
       if (btn) btn.disabled = false;
-      el.innerHTML = '<span style="font-size:12px;color:var(--red);">Request failed: ' + e + '</span>';
+      el.textContent = 'Request failed: ' + e;
     }
   }
 
   async function restoreBackup(filename) {
     if (!confirm('Restore from "' + filename + '"?\n\nYour current config will be saved as a pre-restore backup first, then Unbound will be reloaded.')) return;
     toast('Restoring backup…', 'info');
-    try {
-      const d = await apiPost('/api/backup/restore', { filename });
-      if (d.success) {
-        toast('Restored successfully — Unbound reloaded!', 'success');
-        loadBackups();
-      } else {
-        toast('Restore failed: ' + (d.error || 'unknown error'), 'error');
-      }
-    } catch (e) {
-      toast('Request failed: ' + e, 'error');
-    }
+    const d = await apiPost('/api/backup/restore', { filename });
+    if (d.success) { toast('Restored successfully — Unbound reloaded!', 'success'); loadBackups(); }
+    else toast('Restore failed: ' + (d.error || d.detail || 'unknown'), 'error');
   }
 
   async function deleteBackup(filename) {
     if (!confirm('Delete backup "' + filename + '"?\nThis cannot be undone.')) return;
-    toast('Deleting…', 'info');
-    try {
-      const d = await apiPost('/api/backup/delete', { filename });
-      if (d.success) {
-        toast('Backup deleted', 'success');
-        loadBackups();
-      } else {
-        toast('Delete failed: ' + (d.error || 'unknown error'), 'error');
-      }
-    } catch (e) {
-      toast('Request failed: ' + e, 'error');
-    }
+    const d = await apiPost('/api/backup/delete', { filename });
+    if (d.success) { toast('Backup deleted', 'success'); loadBackups(); }
+    else toast('Delete failed: ' + (d.error || d.detail || 'unknown'), 'error');
   }
 
   function formatBytes(bytes) {
@@ -639,7 +613,15 @@
   }
 
   function escHtml(str) {
-    return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
+
+  refreshLogs();
+  loadBackups();
 </script>
 {% endblock %}

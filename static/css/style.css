@@ -33,6 +33,7 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    overflow-x: auto;
 }
 
 body {
@@ -489,6 +490,11 @@ body {
 }
 
 /* ── FORMS ── */
+
+.form-group {
+    margin-bottom: 6px;
+}
+
 .form-section {
     margin-bottom: 24px;
 }
@@ -501,7 +507,7 @@ body {
     letter-spacing: 1.5px;
     text-transform: uppercase;
     padding: 8px 0 8px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-light);
     margin-bottom: 14px;
     display: flex;
     align-items: center;
@@ -514,7 +520,7 @@ body {
     gap: 10px;
     align-items: start;
     padding: 8px 0;
-    border-bottom: 1px solid rgba(30, 58, 95, 0.5);
+    border-bottom: 1px solid var(--border);
 }
 
 .form-row:last-child {
@@ -532,14 +538,14 @@ body {
     color: var(--accent);
     display: block;
     margin-bottom: 2px;
-    text-transform: capitalize;
+    /* text-transform: capitalize; */
 }
 
 .form-label .desc {
     color: var(--text-muted);
     font-size: 12px;
     line-height: 1.4;
-    text-transform: full-width;
+    text-transform: math-auto;
 }
 
 .form-control {

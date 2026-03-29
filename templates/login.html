@@ -1,20 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
   <title>Login - Unbound DNS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link
-    href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Exo+2:wght@300;400;500;600&family=Share+Tech+Mono&display=swap"
-    rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Exo+2:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/login-page.css') }}">
   <link rel="icon" href="{{ url_for('static', filename='unbound.svg')}}" type="image/svg+xml">
 </head>
-
 <body>
 
   <div class="login-logo">
@@ -25,8 +21,8 @@
   <div class="card">
     <div class="card-header">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-        <path d="M7 11V7a5 5 0 0110 0v4" />
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+        <path d="M7 11V7a5 5 0 0110 0v4"/>
       </svg>
       <h3>Log In</h3>
     </div>
@@ -35,30 +31,36 @@
       <div class="alert">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"
           style="flex-shrink:0;margin-top:1px;">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="8" x2="12" y2="12" />
-          <line x1="12" y1="16" x2="12.01" y2="16" />
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
         </svg>
-        {{ error }}
+        {{ error | e }}
       </div>
       {% endif %}
 
-      <form method="POST" action="/login">
-        <input type="hidden" name="next" value="{{ next or '/' }}">
+      <!-- Standard HTML form — POST to /login with form encoding.
+           The next field prevents open redirect (validated server-side). -->
+      <form method="POST" action="/login" autocomplete="on">
+        <input type="hidden" name="next" value="{{ next | e }}">
         <div class="form-group">
           <label class="form-label" for="username">Username</label>
-          <input class="form-control" type="text" id="username" name="username" autocomplete="username" autofocus
-            value="{{ last_username or '' }}">
+          <input class="form-control" type="text" id="username" name="username"
+            autocomplete="username" autofocus
+            value="{{ last_username | e }}"
+            maxlength="64" required>
         </div>
         <div class="form-group">
           <label class="form-label" for="password">Password</label>
-          <input class="form-control" type="password" id="password" name="password" autocomplete="current-password">
+          <input class="form-control" type="password" id="password" name="password"
+            autocomplete="current-password"
+            maxlength="128" required>
         </div>
         <button type="submit" class="btn2 btn-primary2 btn-full2" style="margin-top:8px;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-            <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4" />
-            <polyline points="10 17 15 12 10 7" />
-            <line x1="15" y1="12" x2="3" y2="12" />
+            <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/>
+            <polyline points="10 17 15 12 10 7"/>
+            <line x1="15" y1="12" x2="3" y2="12"/>
           </svg>
           Log In
         </button>
@@ -66,8 +68,7 @@
     </div>
   </div>
 
-  <div class="login-footer">M-UI for <a target="_blank" href="https://nlnetlabs.nl/projects/unbound/about/">Unbound DNS</a></div>
+  <div class="login-footer">M-UI for <a target="_blank" rel="noopener noreferrer" href="https://nlnetlabs.nl/projects/unbound/about/">Unbound DNS</a></div>
 
 </body>
-
 </html>
