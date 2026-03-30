@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
 
+<script>
+var FILE_META      = {{ file_meta_json | safe }};
+var IS_MAIN        = {{ 'true' if is_main_config else 'false' }};
+var ALLOWED_TABS   = FILE_META.allowed_tabs || [];
+var ALL_TABS       = {{ all_tabs_json | safe }};
+var TAB_LABELS     = {{ tab_labels_json | safe }};
+</script>
+
 <div class="page-header">
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff7a1a" stroke-width="2">
     <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
@@ -12,10 +20,7 @@
     <h1>Configuration</h1>
     <div class="page-breadcrumb">Unbound DNS Manager / <span>Config</span></div>
   </div>
-  <div style="margin-left:auto;" class="flex gap-1">
-    <span class="text-xs text-mono text-muted" style="padding:6px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;">
-      {{ cfg_file }}
-    </span>
+  <div class="flex gap-1 page-header-actions">
     <button class="btn btn-ghost btn-sm" onclick="loadRawEditor()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
       Raw Editor
@@ -23,461 +28,184 @@
   </div>
 </div>
 
-<!-- CONF FILE SELECTOR -->
-{% if conf_d_files %}
-<div class="card" style="margin-bottom:14px;">
+<!-- ACTIVE CONFIG FILE CARD -->
+<div class="card cfg-file-card">
   <div class="card-header">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+      <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+    </svg>
     <h3>Active Config File</h3>
   </div>
-  <div class="card-body" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-    <select class="form-control" id="file-selector" style="max-width:480px;" onchange="switchConfigFile(this.value)">
-      <option value="/etc/unbound/unbound.conf" {% if cfg_file=='/etc/unbound/unbound.conf' %}selected{% endif %}>/etc/unbound/unbound.conf</option>
+  <div class="cfg-file-card-body">
+    <select class="form-control" id="file-selector" onchange="switchConfigFile(this.value)">
+      <option value="/etc/unbound/unbound.conf" {% if cfg_file=='/etc/unbound/unbound.conf' %}selected{% endif %}>/etc/unbound/unbound.conf  (main)</option>
       {% for f in conf_d_files %}
       <option value="{{ f }}" {% if cfg_file==f %}selected{% endif %}>{{ f }}</option>
       {% endfor %}
     </select>
-    <button class="btn btn-ghost btn-sm" onclick="reloadPage()">Load Selected</button>
-    <span class="text-xs text-muted text-mono">Currently editing: <b class="text-accent">{{ cfg_file }}</b></span>
+    {% if not is_main_config %}
+    <div class="cfg-file-allowed-tabs">
+      <span class="text-xs text-muted">Allowed tabs:</span>
+      {% for t in file_meta.allowed_tabs %}
+      <span class="badge badge-gray badge-xs">{{ t }}</span>
+      {% endfor %}
+      {% if file_meta.description %}
+      <span class="text-xs text-muted cfg-file-desc">&#8212; {{ file_meta.description }}</span>
+      {% endif %}
+    </div>
+    {% else %}
+    <span class="badge badge-green badge-xs">main config &#8212; all tabs enabled</span>
+    {% endif %}
   </div>
 </div>
-{% endif %}
 
 <!-- CONFIG TABS -->
-<div class="tab-nav">
-  <button class="tab-btn active" data-tab="basic" onclick="switchTab('basic')">Basic</button>
-  <button class="tab-btn" data-tab="security" onclick="switchTab('security')">Security</button>
-  <button class="tab-btn" data-tab="performance" onclick="switchTab('performance')">Performance</button>
-  <button class="tab-btn" data-tab="logging" onclick="switchTab('logging')">Logging</button>
-  <button class="tab-btn" data-tab="access" onclick="switchTab('access')">Access Control</button>
-  <button class="tab-btn" data-tab="forwarding" onclick="switchTab('forwarding')">Forwarding</button>
-  <button class="tab-btn" data-tab="local" onclick="switchTab('local')">Local Zones</button>
-  <button class="tab-btn" data-tab="dnssec" onclick="switchTab('dnssec')">DNSSEC</button>
-  <button class="tab-btn" data-tab="advanced" onclick="switchTab('advanced')">Advanced</button>
+<div class="tab-nav" id="tab-nav">
+  <button class="tab-btn active" data-tab="basic"       onclick="switchTab('basic')">Basic</button>
+  <button class="tab-btn"        data-tab="security"    onclick="switchTab('security')">Security</button>
+  <button class="tab-btn"        data-tab="performance" onclick="switchTab('performance')">Performance</button>
+  <button class="tab-btn"        data-tab="logging"     onclick="switchTab('logging')">Logging</button>
+  <button class="tab-btn"        data-tab="access"      onclick="switchTab('access')">Access Control</button>
+  <button class="tab-btn"        data-tab="forwarding"  onclick="switchTab('forwarding')">Forwarding</button>
+  <button class="tab-btn"        data-tab="local"       onclick="switchTab('local')">Local Zones</button>
+  <button class="tab-btn"        data-tab="dnssec"      onclick="switchTab('dnssec')">DNSSEC</button>
+  <button class="tab-btn"        data-tab="advanced"    onclick="switchTab('advanced')">Advanced</button>
+  <button class="tab-btn"        data-tab="uiprefs"     onclick="switchTab('uiprefs')">UI Preferences</button>
 </div>
 
 <form id="config-form">
 
-<!-- ═══════════ TAB: BASIC ═══════════ -->
+<!-- TAB: BASIC -->
 <div class="tab-pane active" id="tab-basic">
   <div class="card">
     <div class="card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><h3>Basic Server Settings</h3></div>
     <div class="card-body">
-
       <div class="form-section-title">Network Binding</div>
-
-      {% macro boolrow(key, label, desc, val, cfg) %}
-      <div class="form-row">
-        <div class="form-label"><span class="key">{{ key }}</span><span class="desc">{{ desc }}</span></div>
-        <div class="toggle-wrap">
-          <label class="toggle">
-            <input type="checkbox" name="{{ key }}" value="yes" {% if cfg.get(key, val) == 'yes' %}checked{% endif %}>
-            <span class="toggle-slider"></span>
-          </label>
-          <span class="toggle-label" id="lbl-{{ key }}">{{ 'yes' if cfg.get(key,val)=='yes' else 'no' }}</span>
-        </div>
-      </div>
-      {% endmacro %}
-
-      {% macro textrow(key, label, desc, placeholder, val, cfg) %}
-      <div class="form-row">
-        <div class="form-label"><span class="key">{{ key }}</span><span class="desc">{{ desc }}</span></div>
-        <input type="text" class="form-control" name="{{ key }}" placeholder="{{ placeholder }}" value="{{ cfg.get(key, val) }}">
-      </div>
-      {% endmacro %}
-
-      {% macro selectrow(key, label, desc, opts, val, cfg) %}
-      <div class="form-row">
-        <div class="form-label"><span class="key">{{ key }}</span><span class="desc">{{ desc }}</span></div>
-        <select class="form-control" name="{{ key }}">
-          {% for o in opts %}
-          <option value="{{ o }}" {% if cfg.get(key,val)==o %}selected{% endif %}>{{ o }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      {% endmacro %}
-
-      <div class="form-row">
-        <div class="form-label"><span class="key">interface</span><span class="desc">IP address to listen on. Use 0.0.0.0 for all IPv4, :: for all IPv6.</span></div>
-        <input type="text" class="form-control" name="interface" placeholder="0.0.0.0" value="{{ cfg.server.get('interface','0.0.0.0') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">port</span><span class="desc">Port to listen on for DNS queries. Default is 53.</span></div>
-        <input type="text" class="form-control form-control-sm" name="port" placeholder="53" value="{{ cfg.server.get('port','53') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">outgoing-interface</span><span class="desc">Outgoing interface used to send queries to upstream resolvers.</span></div>
-        <input type="text" class="form-control" name="outgoing-interface" placeholder="(leave blank for auto)" value="{{ cfg.server.get('outgoing-interface','') }}">
-      </div>
-
+      <div class="form-row"><div class="form-label"><span class="key">interface</span><span class="desc">IP to listen on. 0.0.0.0 = all IPv4, :: = all IPv6.</span></div>
+        <input type="text" class="form-control" name="interface" placeholder="0.0.0.0" value="{{ cfg.server.get('interface','0.0.0.0') }}"></div>
+      <div class="form-row"><div class="form-label"><span class="key">port</span><span class="desc">Port for DNS queries. Default 53.</span></div>
+        <input type="text" class="form-control form-control-sm" name="port" placeholder="53" value="{{ cfg.server.get('port','53') }}"></div>
+      <div class="form-row"><div class="form-label"><span class="key">outgoing-interface</span><span class="desc">Outgoing interface for upstream queries.</span></div>
+        <input type="text" class="form-control" name="outgoing-interface" placeholder="(auto)" value="{{ cfg.server.get('outgoing-interface','') }}"></div>
       <div class="form-section-title">Protocol Support</div>
-
-      <div class="form-row">
-        <div class="form-label"><span class="key">do-ip4</span><span class="desc">Enable DNS over IPv4.</span></div>
-        <div class="toggle-wrap">
-          <label class="toggle"><input type="checkbox" name="do-ip4" value="yes" {% if cfg.server.get('do-ip4','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label>
-          <span class="toggle-label">yes/no</span>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">do-ip6</span><span class="desc">Enable DNS over IPv6. Disable if your network has no IPv6.</span></div>
-        <div class="toggle-wrap">
-          <label class="toggle"><input type="checkbox" name="do-ip6" value="yes" {% if cfg.server.get('do-ip6','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label>
-          <span class="toggle-label">yes/no</span>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">do-udp</span><span class="desc">Enable UDP transport for DNS. Required for most resolvers.</span></div>
-        <div class="toggle-wrap">
-          <label class="toggle"><input type="checkbox" name="do-udp" value="yes" {% if cfg.server.get('do-udp','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label>
-          <span class="toggle-label">yes/no</span>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">do-tcp</span><span class="desc">Enable TCP transport for DNS. Needed for large responses and DNSSEC.</span></div>
-        <div class="toggle-wrap">
-          <label class="toggle"><input type="checkbox" name="do-tcp" value="yes" {% if cfg.server.get('do-tcp','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label>
-          <span class="toggle-label">yes/no</span>
-        </div>
-      </div>
-
+      {% for key,label,default in [('do-ip4','Enable IPv4','yes'),('do-ip6','Enable IPv6','yes'),('do-udp','Enable UDP','yes'),('do-tcp','Enable TCP','yes')] %}
+      <div class="form-row"><div class="form-label"><span class="key">{{ key }}</span><span class="desc">{{ label }}.</span></div>
+        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="{{ key }}" value="yes" {% if cfg.server.get(key,default)=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div></div>
+      {% endfor %}
       <div class="form-section-title">Process Settings</div>
-
-      <div class="form-row">
-        <div class="form-label"><span class="key">num-threads</span><span class="desc">Number of worker threads. Typically set to number of CPU cores.</span></div>
-        <input type="number" class="form-control form-control-sm" name="num-threads" min="1" max="64" value="{{ cfg.server.get('num-threads','1') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">verbosity</span><span class="desc">Log verbosity level. 0=errors only, 1=ops, 2=detail, 3=query, 4=algo, 5=full.</span></div>
-        <select class="form-control form-control-sm" name="verbosity">
-          {% for v in ['0','1','2','3','4','5'] %}
-          <option value="{{ v }}" {% if cfg.server.get('verbosity','1')==v %}selected{% endif %}>{{ v }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">do-daemonize</span><span class="desc">Run as daemon in background. Set to no when using systemd.</span></div>
-        <div class="toggle-wrap">
-          <label class="toggle"><input type="checkbox" name="do-daemonize" value="yes" {% if cfg.server.get('do-daemonize','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label>
-          <span class="toggle-label">yes/no</span>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">username</span><span class="desc">User account Unbound runs as after dropping privileges.</span></div>
-        <input type="text" class="form-control" name="username" placeholder="unbound" value="{{ cfg.server.get('username','unbound') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">directory</span><span class="desc">Working directory for Unbound process.</span></div>
-        <input type="text" class="form-control" name="directory" placeholder="/etc/unbound" value="{{ cfg.server.get('directory','/etc/unbound') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">chroot</span><span class="desc">Chroot jail directory. Leave empty to disable chroot.</span></div>
-        <input type="text" class="form-control" name="chroot" placeholder="(disabled)" value="{{ cfg.server.get('chroot','') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">pidfile</span><span class="desc">Path to PID file written by Unbound.</span></div>
-        <input type="text" class="form-control" name="pidfile" placeholder="/run/unbound.pid" value="{{ cfg.server.get('pidfile','/run/unbound.pid') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">root-hints</span><span class="desc">Path to root hints file (named.root / root.hints) for recursive resolution.</span></div>
-        <input type="text" class="form-control" name="root-hints" placeholder="/usr/share/dns/root.hints" value="{{ cfg.server.get('root-hints','') }}">
-      </div>
+      <div class="form-row"><div class="form-label"><span class="key">num-threads</span><span class="desc">Worker threads. Match CPU count.</span></div>
+        <input type="number" class="form-control form-control-sm" name="num-threads" min="1" max="64" value="{{ cfg.server.get('num-threads','1') }}"></div>
+      <div class="form-row"><div class="form-label"><span class="key">verbosity</span><span class="desc">0=errors only, 5=full debug.</span></div>
+        <select class="form-control form-control-sm" name="verbosity">{% for v in ['0','1','2','3','4','5'] %}<option value="{{ v }}" {% if cfg.server.get('verbosity','1')==v %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></div>
+      <div class="form-row"><div class="form-label"><span class="key">do-daemonize</span><span class="desc">Run as daemon. Set no for systemd.</span></div>
+        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="do-daemonize" value="yes" {% if cfg.server.get('do-daemonize','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div></div>
+      {% for key,ph,default in [('username','unbound','unbound'),('directory','/etc/unbound','/etc/unbound'),('chroot','(disabled)',''),('pidfile','/run/unbound.pid','/run/unbound.pid'),('root-hints','/usr/share/dns/root.hints','')] %}
+      <div class="form-row"><div class="form-label"><span class="key">{{ key }}</span></div>
+        <input type="text" class="form-control" name="{{ key }}" placeholder="{{ ph }}" value="{{ cfg.server.get(key,default) }}"></div>
+      {% endfor %}
     </div>
   </div>
 </div>
 
-<!-- ═══════════ TAB: SECURITY ═══════════ -->
+<!-- TAB: SECURITY -->
 <div class="tab-pane" id="tab-security">
   <div class="card">
     <div class="card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><h3>Security &amp; Hardening</h3></div>
     <div class="card-body">
-
       <div class="form-section-title">Identity Protection</div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">hide-identity</span><span class="desc">Refuse to answer id.server and hostname.bind queries. Hides server identity.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="hide-identity" value="yes" {% if cfg.server.get('hide-identity','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">hide-version</span><span class="desc">Refuse to answer version.server and version.bind queries. Hides version info.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="hide-version" value="yes" {% if cfg.server.get('hide-version','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">hide-trustanchor</span><span class="desc">Refuse to answer queries for DNSSEC trust anchors. Prevents fingerprinting.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="hide-trustanchor" value="yes" {% if cfg.server.get('hide-trustanchor','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">identity</span><span class="desc">Reported identity when hide-identity is off. Overrides hostname.</span></div>
-        <input type="text" class="form-control" name="identity" placeholder="(hostname)" value="{{ cfg.server.get('identity','') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">version</span><span class="desc">Reported version when hide-version is off.</span></div>
-        <input type="text" class="form-control" name="version" placeholder="(unbound version)" value="{{ cfg.server.get('version','') }}">
-      </div>
-
+      {% for key,default in [('hide-identity','yes'),('hide-version','yes'),('hide-trustanchor','yes')] %}
+      <div class="form-row"><div class="form-label"><span class="key">{{ key }}</span></div>
+        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="{{ key }}" value="yes" {% if cfg.server.get(key,default)=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div></div>
+      {% endfor %}
+      {% for key,ph in [('identity','(hostname)'),('version','(unbound version)')] %}
+      <div class="form-row"><div class="form-label"><span class="key">{{ key }}</span></div>
+        <input type="text" class="form-control" name="{{ key }}" placeholder="{{ ph }}" value="{{ cfg.server.get(key,'') }}"></div>
+      {% endfor %}
       <div class="form-section-title">DNS Hardening</div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">harden-glue</span><span class="desc">Require glue records to be within the server's authority. Prevents cache poisoning.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="harden-glue" value="yes" {% if cfg.server.get('harden-glue','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">harden-dnssec-stripped</span><span class="desc">Reject responses that do not contain DNSSEC data when expected.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="harden-dnssec-stripped" value="yes" {% if cfg.server.get('harden-dnssec-stripped','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">harden-below-nxdomain</span><span class="desc">NXDOMAIN must be used for subdomains of NXDOMAINs (RFC 8020).</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="harden-below-nxdomain" value="yes" {% if cfg.server.get('harden-below-nxdomain','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">harden-referral-path</span><span class="desc">Harden referral path to authoritative servers against cache poisoning.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="harden-referral-path" value="no" {% if cfg.server.get('harden-referral-path','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">harden-algo-downgrade</span><span class="desc">Disallow algorithm downgrade in DNSSEC. Prevents weaker algo usage.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="harden-algo-downgrade" value="no" {% if cfg.server.get('harden-algo-downgrade','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">harden-short-bufsize</span><span class="desc">Very small EDNS buffer sizes from queries are ignored. Prevents DoS.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="harden-short-bufsize" value="yes" {% if cfg.server.get('harden-short-bufsize','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">harden-large-queries</span><span class="desc">Very large queries are ignored. Prevents amplification attacks.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="harden-large-queries" value="no" {% if cfg.server.get('harden-large-queries','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-
+      {% for key,default in [('harden-glue','yes'),('harden-dnssec-stripped','yes'),('harden-below-nxdomain','yes'),('harden-referral-path','no'),('harden-algo-downgrade','no'),('harden-short-bufsize','yes'),('harden-large-queries','no')] %}
+      <div class="form-row"><div class="form-label"><span class="key">{{ key }}</span></div>
+        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="{{ key }}" value="yes" {% if cfg.server.get(key,default)=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div></div>
+      {% endfor %}
       <div class="form-section-title">Privacy &amp; Randomization</div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">use-caps-for-id</span><span class="desc">Use 0x20 bit randomization in queries to upstream to detect DNS poisoning (0x20 encoding).</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="use-caps-for-id" value="yes" {% if cfg.server.get('use-caps-for-id','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">qname-minimisation</span><span class="desc">Send minimum qname to upstream resolvers (RFC 7816). Improves privacy.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="qname-minimisation" value="yes" {% if cfg.server.get('qname-minimisation','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">qname-minimisation-strict</span><span class="desc">Strict mode for QNAME minimisation. Falls back to full name on failure.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="qname-minimisation-strict" value="no" {% if cfg.server.get('qname-minimisation-strict','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">aggressive-nsec</span><span class="desc">Synthesize NXDOMAINs from NSEC records. Reduces queries to upstream.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="aggressive-nsec" value="yes" {% if cfg.server.get('aggressive-nsec','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">minimal-responses</span><span class="desc">Only include data strictly necessary in responses. Reduces bandwidth.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="minimal-responses" value="yes" {% if cfg.server.get('minimal-responses','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">do-not-query-localhost</span><span class="desc">Do not send queries to localhost addresses. Prevents loops.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="do-not-query-localhost" value="yes" {% if cfg.server.get('do-not-query-localhost','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-
+      {% for key,default in [('use-caps-for-id','no'),('qname-minimisation','yes'),('qname-minimisation-strict','no'),('aggressive-nsec','yes'),('minimal-responses','yes'),('do-not-query-localhost','yes'),('ignore-cd-flag','no')] %}
+      <div class="form-row"><div class="form-label"><span class="key">{{ key }}</span></div>
+        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="{{ key }}" value="yes" {% if cfg.server.get(key,default)=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div></div>
+      {% endfor %}
       <div class="form-section-title">Rate Limiting</div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">ratelimit</span><span class="desc">Limit queries per second per domain (0=disabled). Prevents DNS amplification.</span></div>
-        <input type="number" class="form-control form-control-sm" name="ratelimit" min="0" placeholder="0" value="{{ cfg.server.get('ratelimit','0') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">ip-ratelimit</span><span class="desc">Limit queries per second per client IP (0=disabled). Per-IP protection.</span></div>
-        <input type="number" class="form-control form-control-sm" name="ip-ratelimit" min="0" placeholder="0" value="{{ cfg.server.get('ip-ratelimit','0') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">unwanted-reply-threshold</span><span class="desc">After this many unwanted replies, flush the cache and query again. 0=disabled.</span></div>
-        <input type="number" class="form-control form-control-sm" name="unwanted-reply-threshold" min="0" placeholder="0" value="{{ cfg.server.get('unwanted-reply-threshold','0') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">private-address</span><span class="desc">Addresses that are private and should not appear in public DNS responses.</span></div>
-        <input type="text" class="form-control" name="private-address" placeholder="10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16" value="{{ cfg.server.get('private-address','') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">ignore-cd-flag</span><span class="desc">Ignore the CD (checking disabled) flag in client requests. Forces validation.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="ignore-cd-flag" value="no" {% if cfg.server.get('ignore-cd-flag','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
+      {% for key,ph,default in [('ratelimit','0 (disabled)','0'),('ip-ratelimit','0 (disabled)','0'),('unwanted-reply-threshold','0 (disabled)','0')] %}
+      <div class="form-row"><div class="form-label"><span class="key">{{ key }}</span></div>
+        <input type="number" class="form-control form-control-sm" name="{{ key }}" min="0" placeholder="{{ ph }}" value="{{ cfg.server.get(key,default) }}"></div>
+      {% endfor %}
+      <div class="form-row"><div class="form-label"><span class="key">private-address</span></div>
+        <input type="text" class="form-control" name="private-address" placeholder="10.0.0.0/8" value="{{ cfg.server.get('private-address','') }}"></div>
     </div>
   </div>
 </div>
 
-<!-- ═══════════ TAB: PERFORMANCE ═══════════ -->
+<!-- TAB: PERFORMANCE -->
 <div class="tab-pane" id="tab-performance">
   <div class="card">
     <div class="card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><h3>Performance Tuning</h3></div>
     <div class="card-body">
-
-      <div class="form-section-title">Caching Behaviour</div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">prefetch</span><span class="desc">Prefetch popular DNS records before they expire. Improves response times significantly.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="prefetch" value="yes" {% if cfg.server.get('prefetch','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">prefetch-key</span><span class="desc">Fetch DNSKEY early in the validation process for better DNSSEC performance.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="prefetch-key" value="yes" {% if cfg.server.get('prefetch-key','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">cache-min-ttl</span><span class="desc">Minimum TTL (seconds) for cached entries. Override low TTL values from upstreams.</span></div>
-        <input type="number" class="form-control form-control-sm" name="cache-min-ttl" min="0" placeholder="0" value="{{ cfg.server.get('cache-min-ttl','0') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">cache-max-ttl</span><span class="desc">Maximum TTL (seconds) for cached entries. Prevents stale records being kept too long.</span></div>
-        <input type="number" class="form-control form-control-sm" name="cache-max-ttl" min="0" placeholder="86400" value="{{ cfg.server.get('cache-max-ttl','86400') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">cache-max-negative-ttl</span><span class="desc">Maximum TTL for negative (NXDOMAIN) cache entries in seconds.</span></div>
-        <input type="number" class="form-control form-control-sm" name="cache-max-negative-ttl" min="0" placeholder="3600" value="{{ cfg.server.get('cache-max-negative-ttl','3600') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">serve-expired</span><span class="desc">Serve expired records when fresh ones cannot be retrieved (stale-while-revalidate).</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="serve-expired" value="no" {% if cfg.server.get('serve-expired','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">serve-expired-ttl</span><span class="desc">Maximum time (seconds) to serve expired records. 0=unlimited.</span></div>
-        <input type="number" class="form-control form-control-sm" name="serve-expired-ttl" min="0" placeholder="0" value="{{ cfg.server.get('serve-expired-ttl','0') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">rrset-roundrobin</span><span class="desc">Rotate RRsets in responses for basic load balancing across multiple IPs.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="rrset-roundrobin" value="yes" {% if cfg.server.get('rrset-roundrobin','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-
-      <div class="form-section-title">Memory Sizes</div>
-      <div class="alert alert-info" style="margin-bottom:12px;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Use suffixes: k (kilobytes), m (megabytes), g (gigabytes). E.g. <code>128m</code>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">msg-cache-size</span><span class="desc">Memory for message cache (DNS responses). Higher = better hit rate.</span></div>
-        <input type="text" class="form-control form-control-sm" name="msg-cache-size" placeholder="4m" value="{{ cfg.server.get('msg-cache-size','4m') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">rrset-cache-size</span><span class="desc">Memory for RRset cache (individual resource records). Should be 2x msg-cache-size.</span></div>
-        <input type="text" class="form-control form-control-sm" name="rrset-cache-size" placeholder="8m" value="{{ cfg.server.get('rrset-cache-size','8m') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">neg-cache-size</span><span class="desc">Memory for negative cache (NXDOMAIN and NODATA answers).</span></div>
-        <input type="text" class="form-control form-control-sm" name="neg-cache-size" placeholder="1m" value="{{ cfg.server.get('neg-cache-size','1m') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">msg-buffer-size</span><span class="desc">Size of DNS message buffer in bytes. 65552 allows full EDNS buffers.</span></div>
-        <input type="number" class="form-control form-control-sm" name="msg-buffer-size" placeholder="65552" value="{{ cfg.server.get('msg-buffer-size','65552') }}">
-      </div>
-
-      <div class="form-section-title">Network Buffers &amp; Queues</div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">outgoing-range</span><span class="desc">Number of ports opened per thread for outgoing queries. Higher allows more parallel queries.</span></div>
-        <input type="number" class="form-control form-control-sm" name="outgoing-range" placeholder="512" value="{{ cfg.server.get('outgoing-range','512') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">num-queries-per-thread</span><span class="desc">Max simultaneous queries per thread. Limits resource usage.</span></div>
-        <input type="number" class="form-control form-control-sm" name="num-queries-per-thread" placeholder="1024" value="{{ cfg.server.get('num-queries-per-thread','1024') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">so-rcvbuf</span><span class="desc">UDP receive buffer size (bytes). 0=OS default. 1m recommended for busy servers.</span></div>
-        <input type="text" class="form-control form-control-sm" name="so-rcvbuf" placeholder="0" value="{{ cfg.server.get('so-rcvbuf','0') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">so-sndbuf</span><span class="desc">UDP send buffer size (bytes). 0=OS default.</span></div>
-        <input type="text" class="form-control form-control-sm" name="so-sndbuf" placeholder="0" value="{{ cfg.server.get('so-sndbuf','0') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">edns-buffer-size</span><span class="desc">EDNS buffer size advertised to upstreams. 1232 is DNSSEC flag-day recommendation.</span></div>
-        <input type="number" class="form-control form-control-sm" name="edns-buffer-size" placeholder="1232" value="{{ cfg.server.get('edns-buffer-size','1232') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">so-reuseport</span><span class="desc">Enable SO_REUSEPORT. Allows multiple threads to bind the same port for better load distribution.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="so-reuseport" value="yes" {% if cfg.server.get('so-reuseport','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-
-      <div class="form-section-title">Infrastructure Cache</div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">infra-cache-numhosts</span><span class="desc">Number of hosts for infrastructure cache. Contains RTT and health of name servers.</span></div>
-        <input type="number" class="form-control form-control-sm" name="infra-cache-numhosts" placeholder="10000" value="{{ cfg.server.get('infra-cache-numhosts','10000') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">infra-host-ttl</span><span class="desc">TTL for infrastructure cache entries in seconds.</span></div>
-        <input type="number" class="form-control form-control-sm" name="infra-host-ttl" placeholder="900" value="{{ cfg.server.get('infra-host-ttl','900') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">jostle-timeout</span><span class="desc">Time (msec) to wait for first upstream response before trying next. Handles slow upstreams.</span></div>
-        <input type="number" class="form-control form-control-sm" name="jostle-timeout" placeholder="200" value="{{ cfg.server.get('jostle-timeout','200') }}">
-      </div>
+      <div class="form-section-title">Caching</div>
+      {% for key,default in [('prefetch','yes'),('prefetch-key','yes'),('serve-expired','no'),('rrset-roundrobin','yes'),('so-reuseport','yes')] %}
+      <div class="form-row"><div class="form-label"><span class="key">{{ key }}</span></div>
+        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="{{ key }}" value="yes" {% if cfg.server.get(key,default)=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div></div>
+      {% endfor %}
+      {% for key,ph,default in [('cache-min-ttl','0','0'),('cache-max-ttl','86400','86400'),('cache-max-negative-ttl','3600','3600'),('serve-expired-ttl','0','0')] %}
+      <div class="form-row"><div class="form-label"><span class="key">{{ key }}</span></div>
+        <input type="number" class="form-control form-control-sm" name="{{ key }}" min="0" placeholder="{{ ph }}" value="{{ cfg.server.get(key,default) }}"></div>
+      {% endfor %}
+      <div class="form-section-title">Memory <span class="section-hint">(k/m/g suffixes)</span></div>
+      {% for key,ph,default in [('msg-cache-size','4m','4m'),('rrset-cache-size','8m','8m'),('neg-cache-size','1m','1m'),('msg-buffer-size','65552','65552')] %}
+      <div class="form-row"><div class="form-label"><span class="key">{{ key }}</span></div>
+        <input type="text" class="form-control form-control-sm" name="{{ key }}" placeholder="{{ ph }}" value="{{ cfg.server.get(key,default) }}"></div>
+      {% endfor %}
+      <div class="form-section-title">Network &amp; Queues</div>
+      {% for key,ph,default in [('outgoing-range','512','512'),('num-queries-per-thread','1024','1024'),('so-rcvbuf','0','0'),('so-sndbuf','0','0'),('edns-buffer-size','1232','1232'),('infra-cache-numhosts','10000','10000'),('infra-host-ttl','900','900'),('jostle-timeout','200','200')] %}
+      <div class="form-row"><div class="form-label"><span class="key">{{ key }}</span></div>
+        <input type="text" class="form-control form-control-sm" name="{{ key }}" placeholder="{{ ph }}" value="{{ cfg.server.get(key,default) }}"></div>
+      {% endfor %}
     </div>
   </div>
 </div>
 
-<!-- ═══════════ TAB: LOGGING ═══════════ -->
+<!-- TAB: LOGGING -->
 <div class="tab-pane" id="tab-logging">
   <div class="card">
-    <div class="card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><h3>Logging Configuration</h3></div>
+    <div class="card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><h3>Logging</h3></div>
     <div class="card-body">
-      <div class="form-row">
-        <div class="form-label"><span class="key">use-syslog</span><span class="desc">Send log messages to syslog instead of a file. Recommended for systemd deployments.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="use-syslog" value="yes" {% if cfg.server.get('use-syslog','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">logfile</span><span class="desc">Log file path. Empty string means stderr. Used when use-syslog is no.</span></div>
-        <input type="text" class="form-control" name="logfile" placeholder="" value="{{ cfg.server.get('logfile','') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">log-queries</span><span class="desc">Log all incoming DNS queries. High verbosity – use for debugging only.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="log-queries" value="no" {% if cfg.server.get('log-queries','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">log-replies</span><span class="desc">Log DNS replies sent to clients. Includes response codes.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="log-replies" value="no" {% if cfg.server.get('log-replies','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">log-tag-queryreply</span><span class="desc">Add "query:" and "reply:" tags to logged queries/replies for easier filtering.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="log-tag-queryreply" value="no" {% if cfg.server.get('log-tag-queryreply','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">log-local-actions</span><span class="desc">Log entries that match local-zone/local-data configurations.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="log-local-actions" value="no" {% if cfg.server.get('log-local-actions','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">log-servfail</span><span class="desc">Log queries that received SERVFAIL response. Helps debug resolution failures.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="log-servfail" value="no" {% if cfg.server.get('log-servfail','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">extended-statistics</span><span class="desc">Enable extended statistics collection. Needed for detailed unbound-control stats.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="extended-statistics" value="yes" {% if cfg.server.get('extended-statistics','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">statistics-interval</span><span class="desc">Interval (seconds) to dump statistics to log. 0=disabled.</span></div>
-        <input type="number" class="form-control form-control-sm" name="statistics-interval" min="0" placeholder="0" value="{{ cfg.server.get('statistics-interval','0') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">statistics-cumulative</span><span class="desc">Keep cumulative statistics instead of resetting each interval.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="statistics-cumulative" value="no" {% if cfg.server.get('statistics-cumulative','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">log-identity</span><span class="desc">Prepend this string to syslog/log messages for identification.</span></div>
-        <input type="text" class="form-control" name="log-identity" placeholder="unbound" value="{{ cfg.server.get('log-identity','') }}">
-      </div>
+      {% for key,default in [('use-syslog','yes'),('log-queries','no'),('log-replies','no'),('log-tag-queryreply','no'),('log-local-actions','no'),('log-servfail','no'),('extended-statistics','yes'),('statistics-cumulative','no')] %}
+      <div class="form-row"><div class="form-label"><span class="key">{{ key }}</span></div>
+        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="{{ key }}" value="yes" {% if cfg.server.get(key,default)=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div></div>
+      {% endfor %}
+      {% for key,ph,default in [('logfile','(stderr)',''),('statistics-interval','0','0'),('log-identity','unbound','')] %}
+      <div class="form-row"><div class="form-label"><span class="key">{{ key }}</span></div>
+        <input type="text" class="form-control" name="{{ key }}" placeholder="{{ ph }}" value="{{ cfg.server.get(key,default) }}"></div>
+      {% endfor %}
     </div>
   </div>
 </div>
 
-<!-- ═══════════ TAB: ACCESS CONTROL ═══════════ -->
+<!-- TAB: ACCESS CONTROL -->
 <div class="tab-pane" id="tab-access">
   <div class="card">
     <div class="card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg><h3>Access Control</h3></div>
     <div class="card-body">
-      <div class="alert alert-info" style="margin-bottom:14px;">
+      <div class="alert alert-info alert-mb">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Format: <code>&lt;network/CIDR&gt; &lt;action&gt;</code> — Actions: <code>allow</code>, <code>deny</code>, <code>refuse</code>, <code>allow_snoop</code>, <code>allow_setrd</code>
+        Format: <code>&lt;network/CIDR&gt; &lt;action&gt;</code> &#8212; Actions: <code>allow</code>, <code>deny</code>, <code>refuse</code>, <code>allow_snoop</code>
       </div>
       <div id="ac-list">
         {% for ac in cfg.access_control %}
         <div class="flex gap-1 mb-1 ac-entry">
           <input type="text" class="form-control" name="access_control[]" value="{{ ac }}" placeholder="192.168.0.0/16 allow">
-          <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>
+          <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">&#x2715;</button>
         </div>
         {% endfor %}
         {% if not cfg.access_control %}
-        <div class="flex gap-1 mb-1 ac-entry">
-          <input type="text" class="form-control" name="access_control[]" value="127.0.0.1/32 allow" placeholder="127.0.0.1/32 allow">
-          <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>
-        </div>
-        <div class="flex gap-1 mb-1 ac-entry">
-          <input type="text" class="form-control" name="access_control[]" value="::1/128 allow" placeholder="::1/128 allow">
-          <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>
-        </div>
+        <div class="flex gap-1 mb-1 ac-entry"><input type="text" class="form-control" name="access_control[]" value="127.0.0.1/32 allow"><button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">&#x2715;</button></div>
+        <div class="flex gap-1 mb-1 ac-entry"><input type="text" class="form-control" name="access_control[]" value="::1/128 allow"><button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">&#x2715;</button></div>
         {% endif %}
       </div>
       <button type="button" class="btn btn-ghost btn-sm mt-1" onclick="addACEntry()">+ Add Rule</button>
@@ -485,37 +213,28 @@
   </div>
 </div>
 
-<!-- ═══════════ TAB: FORWARDING ═══════════ -->
+<!-- TAB: FORWARDING -->
 <div class="tab-pane" id="tab-forwarding">
   <div class="card">
     <div class="card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><h3>Forward Zones</h3></div>
     <div class="card-body">
-      <div class="alert alert-info" style="margin-bottom:14px;">
+      <div class="alert alert-info alert-mb">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Forward zones send queries for the given zone to specific DNS servers. Use <code>.</code> to forward all queries.
-        For DoT, append <code>@853</code> and enable TLS.
+        Use <code>.</code> as zone name to forward all queries. Append <code>@853</code> for DNS over TLS.
       </div>
       <div id="fwd-zones-list">
         {% for zone in cfg.forward_zones %}
-        <div class="card fwd-zone-entry" style="margin-bottom:12px;border-color:var(--border-light);">
-          <div class="card-body" style="padding:12px;">
-            <div class="form-row" style="border:none;padding:4px 0;">
-              <div class="form-label"><span class="key">Zone Name</span><span class="desc">DNS zone to forward. Use "." for all queries.</span></div>
-              <input type="text" class="form-control fwd-name" placeholder="." value="{{ zone.name }}">
-            </div>
-            <div class="form-row" style="border:none;padding:4px 0;">
-              <div class="form-label"><span class="key">Forward Servers</span><span class="desc">IP addresses, one per line. Append @853 for DoT.</span></div>
-              <textarea class="form-control fwd-addrs" rows="3" placeholder="8.8.8.8&#10;8.8.4.4&#10;1.1.1.1@853">{{ zone.addrs|join('\n') }}</textarea>
-            </div>
-            <div class="form-row" style="border:none;padding:4px 0;">
-              <div class="form-label"><span class="key">forward-tls-upstream</span><span class="desc">Use DNS over TLS to forward to upstream resolvers. Requires @853 port.</span></div>
-              <div class="toggle-wrap"><label class="toggle"><input type="checkbox" class="fwd-tls" value="yes" {% if zone.tls %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-            </div>
-            <div class="form-row" style="border:none;padding:4px 0;">
-              <div class="form-label"><span class="key">forward-first</span><span class="desc">Try direct resolution first; use forward servers only if that fails.</span></div>
-              <div class="toggle-wrap"><label class="toggle"><input type="checkbox" class="fwd-first" value="yes" {% if zone.first %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-            </div>
-            <div style="text-align:right;margin-top:6px;">
+        <div class="card fwd-zone-entry">
+          <div class="fwd-zone-body">
+            <div class="fwd-zone-row"><div class="form-label"><span class="key">Zone Name</span></div>
+              <input type="text" class="form-control fwd-name" placeholder="." value="{{ zone.name }}"></div>
+            <div class="fwd-zone-row"><div class="form-label"><span class="key">Forward Servers</span><span class="desc">One per line. Append @853 for DoT.</span></div>
+              <textarea class="form-control fwd-addrs" rows="3" placeholder="8.8.8.8&#10;1.1.1.1@853">{{ zone.addrs|join('\n') }}</textarea></div>
+            <div class="fwd-zone-row"><div class="form-label"><span class="key">forward-tls-upstream</span></div>
+              <div class="toggle-wrap"><label class="toggle"><input type="checkbox" class="fwd-tls" value="yes" {% if zone.tls %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">{% if zone.tls %}yes{% else %}no{% endif %}</span></div></div>
+            <div class="fwd-zone-row"><div class="form-label"><span class="key">forward-first</span></div>
+              <div class="toggle-wrap"><label class="toggle"><input type="checkbox" class="fwd-first" value="yes" {% if zone.first %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">{% if zone.first %}yes{% else %}no{% endif %}</span></div></div>
+            <div class="fwd-zone-actions">
               <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.fwd-zone-entry').remove()">Remove Zone</button>
             </div>
           </div>
@@ -523,13 +242,12 @@
         {% endfor %}
       </div>
       <button type="button" class="btn btn-ghost btn-sm" onclick="addFwdZone()">+ Add Forward Zone</button>
-
-      <div class="form-section-title" style="margin-top:20px;">Common Quick-Add Upstreams</div>
+      <div class="form-section-title form-section-title-spaced">Quick Presets</div>
       <div class="btn-group">
         <button type="button" class="btn btn-ghost btn-sm" onclick="addPreset('Cloudflare','1.1.1.1\n1.0.0.1')">Cloudflare</button>
         <button type="button" class="btn btn-ghost btn-sm" onclick="addPreset('Google','8.8.8.8\n8.8.4.4')">Google</button>
         <button type="button" class="btn btn-ghost btn-sm" onclick="addPreset('Quad9','9.9.9.9\n149.112.112.112')">Quad9</button>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="addPreset('Cloudflare DoT','1.1.1.1@853\n1.0.0.1@853',true)">Cloudflare DoT</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="addPreset('Cloudflare DoT','1.1.1.1@853\n1.0.0.1@853',true)">CF DoT</button>
         <button type="button" class="btn btn-ghost btn-sm" onclick="addPreset('Quad9 DoT','9.9.9.9@853\n149.112.112.112@853',true)">Quad9 DoT</button>
         <button type="button" class="btn btn-ghost btn-sm" onclick="addPreset('OpenDNS','208.67.222.222\n208.67.220.220')">OpenDNS</button>
       </div>
@@ -537,157 +255,185 @@
   </div>
 </div>
 
-<!-- ═══════════ TAB: LOCAL ZONES ═══════════ -->
+<!-- TAB: LOCAL ZONES -->
 <div class="tab-pane" id="tab-local">
   <div class="card">
     <div class="card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg><h3>Local Zones &amp; Data</h3></div>
     <div class="card-body">
-      <div class="alert alert-info" style="margin-bottom:14px;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <div><b>local-zone</b> types: <code>static</code>, <code>redirect</code>, <code>refuse</code>, <code>transparent</code>, <code>typetransparent</code>, <code>nodefault</code>, <code>inform</code>, <code>inform_deny</code>, <code>always_nxdomain</code></div>
-      </div>
-
       <div class="form-section-title">Local Zones</div>
+      <div class="alert alert-info alert-mb-sm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Types: <code>static</code> <code>redirect</code> <code>refuse</code> <code>transparent</code> <code>nodefault</code>
+      </div>
       <div id="lz-list">
         {% for lz in cfg.local_zones %}
-        <div class="flex gap-1 mb-1 lz-entry">
-          <input type="text" class="form-control" name="local_zones[]" value="{{ lz }}" placeholder="example.local. static">
-          <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>
-        </div>
+        <div class="flex gap-1 mb-1 lz-entry"><input type="text" class="form-control" name="local_zones[]" value="{{ lz }}" placeholder="example.local. static">
+          <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">&#x2715;</button></div>
         {% endfor %}
       </div>
-      <button type="button" class="btn btn-ghost btn-sm mt-1" onclick="addLZEntry()">+ Add Local Zone</button>
-
-      <div class="form-section-title" style="margin-top:20px;">Local Data (DNS Records)</div>
-      <div class="alert alert-info" style="margin-bottom:10px;">
+      <button type="button" class="btn btn-ghost btn-sm mt-1" onclick="addLZEntry()">+ Add Zone</button>
+      <div class="form-section-title form-section-title-spaced">Local Data (DNS Records)</div>
+      <div class="alert alert-info alert-mb-sm">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Format: <code>name IN type rdata</code> — e.g. <code>host.local. IN A 192.168.1.10</code>
+        Format: <code>host.local. IN A 192.168.1.10</code>
       </div>
       <div id="ld-list">
         {% for ld in cfg.local_data %}
-        <div class="flex gap-1 mb-1 ld-entry">
-          <input type="text" class="form-control" name="local_data[]" value="{{ ld }}" placeholder="myhost.local. IN A 192.168.1.10">
-          <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>
-        </div>
+        <div class="flex gap-1 mb-1 ld-entry"><input type="text" class="form-control" name="local_data[]" value="{{ ld }}" placeholder="host.local. IN A 192.168.1.10">
+          <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">&#x2715;</button></div>
         {% endfor %}
       </div>
-      <button type="button" class="btn btn-ghost btn-sm mt-1" onclick="addLDEntry()">+ Add Local Data</button>
+      <button type="button" class="btn btn-ghost btn-sm mt-1" onclick="addLDEntry()">+ Add Record</button>
     </div>
   </div>
 </div>
 
-<!-- ═══════════ TAB: DNSSEC ═══════════ -->
+<!-- TAB: DNSSEC -->
 <div class="tab-pane" id="tab-dnssec">
   <div class="card">
-    <div class="card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><h3>DNSSEC Configuration</h3></div>
+    <div class="card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><h3>DNSSEC</h3></div>
     <div class="card-body">
-      <div class="form-row">
-        <div class="form-label"><span class="key">module-config</span><span class="desc">Module pipeline. "validator iterator" enables DNSSEC. Remove "validator" to disable DNSSEC validation.</span></div>
-        <input type="text" class="form-control" name="module-config" placeholder="validator iterator" value="{{ cfg.server.get('module-config','validator iterator') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">auto-trust-anchor-file</span><span class="desc">Auto-managed DNSSEC root trust anchor. Updated by unbound-anchor. Recommended.</span></div>
-        <input type="text" class="form-control" name="auto-trust-anchor-file" placeholder="/var/lib/unbound/root.key" value="{{ cfg.server.get('auto-trust-anchor-file','/var/lib/unbound/root.key') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">trust-anchor-file</span><span class="desc">Manual trust anchor file. Use auto-trust-anchor-file instead for production.</span></div>
-        <input type="text" class="form-control" name="trust-anchor-file" placeholder="" value="{{ cfg.server.get('trust-anchor-file','') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">val-permissive-mode</span><span class="desc">Log DNSSEC errors but do not block. Useful for testing DNSSEC without breaking resolution.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="val-permissive-mode" value="no" {% if cfg.server.get('val-permissive-mode','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">val-clean-additional</span><span class="desc">Remove extra data not covered by DNSSEC from validated responses.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="val-clean-additional" value="yes" {% if cfg.server.get('val-clean-additional','yes')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">add-holddown</span><span class="desc">Seconds a new key is held before being added as trust anchor (RFC 5011).</span></div>
-        <input type="number" class="form-control form-control-sm" name="add-holddown" placeholder="2592000" value="{{ cfg.server.get('add-holddown','2592000') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">del-holddown</span><span class="desc">Seconds to hold deleted trust anchor before removing it.</span></div>
-        <input type="number" class="form-control form-control-sm" name="del-holddown" placeholder="2592000" value="{{ cfg.server.get('del-holddown','2592000') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">keep-missing</span><span class="desc">Seconds to keep a missing trust anchor before removing it.</span></div>
-        <input type="number" class="form-control form-control-sm" name="keep-missing" placeholder="31622400" value="{{ cfg.server.get('keep-missing','31622400') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">disable-dnssec-lame-check</span><span class="desc">Disable checking for DNSSEC-aware nameservers being lame. Use with caution.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="disable-dnssec-lame-check" value="no" {% if cfg.server.get('disable-dnssec-lame-check','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
+      <div class="form-row"><div class="form-label"><span class="key">module-config</span><span class="desc">"validator iterator" enables DNSSEC validation.</span></div>
+        <input type="text" class="form-control" name="module-config" placeholder="validator iterator" value="{{ cfg.server.get('module-config','validator iterator') }}"></div>
+      <div class="form-row"><div class="form-label"><span class="key">auto-trust-anchor-file</span><span class="desc">Auto-managed root trust anchor (recommended).</span></div>
+        <input type="text" class="form-control" name="auto-trust-anchor-file" placeholder="/var/lib/unbound/root.key" value="{{ cfg.server.get('auto-trust-anchor-file','/var/lib/unbound/root.key') }}"></div>
+      <div class="form-row"><div class="form-label"><span class="key">trust-anchor-file</span></div>
+        <input type="text" class="form-control" name="trust-anchor-file" value="{{ cfg.server.get('trust-anchor-file','') }}"></div>
+      {% for key,default in [('val-permissive-mode','no'),('val-clean-additional','yes'),('disable-dnssec-lame-check','no')] %}
+      <div class="form-row"><div class="form-label"><span class="key">{{ key }}</span></div>
+        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="{{ key }}" value="yes" {% if cfg.server.get(key,default)=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div></div>
+      {% endfor %}
+      {% for key,ph,default in [('add-holddown','2592000','2592000'),('del-holddown','2592000','2592000'),('keep-missing','31622400','31622400')] %}
+      <div class="form-row"><div class="form-label"><span class="key">{{ key }}</span></div>
+        <input type="number" class="form-control form-control-sm" name="{{ key }}" placeholder="{{ ph }}" value="{{ cfg.server.get(key,default) }}"></div>
+      {% endfor %}
     </div>
   </div>
 </div>
 
-<!-- ═══════════ TAB: ADVANCED ═══════════ -->
+<!-- TAB: ADVANCED -->
 <div class="tab-pane" id="tab-advanced">
   <div class="card">
     <div class="card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><h3>Advanced Options</h3></div>
     <div class="card-body">
       <div class="form-section-title">DNS64</div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">dns64</span><span class="desc">Enable DNS64 synthesis to allow IPv6-only clients to reach IPv4 services.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="dns64" value="no" {% if cfg.server.get('dns64','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">dns64-prefix</span><span class="desc">IPv6 prefix to use for DNS64 synthesis. Default is 64:ff9b::/96.</span></div>
-        <input type="text" class="form-control" name="dns64-prefix" placeholder="64:ff9b::/96" value="{{ cfg.server.get('dns64-prefix','') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">dns64-synthall</span><span class="desc">Synthesize AAAA even when A record exists. Not RFC compliant but useful in some scenarios.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="dns64-synthall" value="no" {% if cfg.server.get('dns64-synthall','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-
+      {% for key,default in [('dns64','no'),('dns64-synthall','no')] %}
+      <div class="form-row"><div class="form-label"><span class="key">{{ key }}</span></div>
+        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="{{ key }}" value="yes" {% if cfg.server.get(key,default)=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div></div>
+      {% endfor %}
+      <div class="form-row"><div class="form-label"><span class="key">dns64-prefix</span></div>
+        <input type="text" class="form-control" name="dns64-prefix" placeholder="64:ff9b::/96" value="{{ cfg.server.get('dns64-prefix','') }}"></div>
       <div class="form-section-title">TLS / DoT</div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">tls-upstream</span><span class="desc">Use TLS for all upstream queries (DNS over TLS). Requires configured forward servers.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="tls-upstream" value="no" {% if cfg.server.get('tls-upstream','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">tls-cert-bundle</span><span class="desc">Path to CA certificates bundle for TLS verification of upstream servers.</span></div>
-        <input type="text" class="form-control" name="tls-cert-bundle" placeholder="/etc/ssl/certs/ca-certificates.crt" value="{{ cfg.server.get('tls-cert-bundle','') }}">
-      </div>
-
-      <div class="form-section-title">Target Fetch Policy</div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">target-fetch-policy</span><span class="desc">Strategy for fetching glue records. "3 2 1 0 0" is a sensible default.</span></div>
-        <input type="text" class="form-control" name="target-fetch-policy" placeholder="3 2 1 0 0" value="{{ cfg.server.get('target-fetch-policy','3 2 1 0 0') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">unblock-lan-zones</span><span class="desc">Unblock queries for RFC 1918 zones. Allows lookups of private ranges.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="unblock-lan-zones" value="no" {% if cfg.server.get('unblock-lan-zones','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">insecure-lan-zones</span><span class="desc">Mark LAN zones as insecure to skip DNSSEC validation for private ranges.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="insecure-lan-zones" value="no" {% if cfg.server.get('insecure-lan-zones','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">ip-transparent</span><span class="desc">Allow binding to non-local IPs for anycast setups.</span></div>
-        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="ip-transparent" value="no" {% if cfg.server.get('ip-transparent','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">delay-close</span><span class="desc">Extra delay (ms) before closing TCP connections. Helps with slow clients.</span></div>
-        <input type="number" class="form-control form-control-sm" name="delay-close" min="0" placeholder="0" value="{{ cfg.server.get('delay-close','0') }}">
-      </div>
-      <div class="form-row">
-        <div class="form-label"><span class="key">private-domain</span><span class="desc">Domain that is private and may return RFC 1918 addresses without warnings.</span></div>
-        <input type="text" class="form-control" name="private-domain" placeholder="example.local." value="{{ cfg.server.get('private-domain','') }}">
-      </div>
+      <div class="form-row"><div class="form-label"><span class="key">tls-upstream</span></div>
+        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="tls-upstream" value="yes" {% if cfg.server.get('tls-upstream','no')=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div></div>
+      <div class="form-row"><div class="form-label"><span class="key">tls-cert-bundle</span></div>
+        <input type="text" class="form-control" name="tls-cert-bundle" placeholder="/etc/ssl/certs/ca-certificates.crt" value="{{ cfg.server.get('tls-cert-bundle','') }}"></div>
+      <div class="form-section-title">Misc</div>
+      {% for key,default in [('unblock-lan-zones','no'),('insecure-lan-zones','no'),('ip-transparent','no')] %}
+      <div class="form-row"><div class="form-label"><span class="key">{{ key }}</span></div>
+        <div class="toggle-wrap"><label class="toggle"><input type="checkbox" name="{{ key }}" value="yes" {% if cfg.server.get(key,default)=='yes' %}checked{% endif %}><span class="toggle-slider"></span></label><span class="toggle-label">yes/no</span></div></div>
+      {% endfor %}
+      {% for key,ph,default in [('target-fetch-policy','3 2 1 0 0','3 2 1 0 0'),('delay-close','0','0'),('private-domain','example.local.','')] %}
+      <div class="form-row"><div class="form-label"><span class="key">{{ key }}</span></div>
+        <input type="text" class="form-control{% if key=='delay-close' %} form-control-sm{% endif %}" name="{{ key }}" placeholder="{{ ph }}" value="{{ cfg.server.get(key,default) }}"></div>
+      {% endfor %}
     </div>
   </div>
 </div>
 
-<!-- ═══════════ APPLY BAR ═══════════ -->
-<div class="apply-bar">
+<!-- TAB: UI PREFERENCES — content differs for main vs sub-config file -->
+<div class="tab-pane" id="tab-uiprefs">
+  <div class="card">
+    <div class="card-header">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <h3 id="uiprefs-title">UI Preferences</h3>
+    </div>
+    <div class="card-body">
+
+      <!-- ── MAIN CONFIG: include-file manager ── -->
+      <div id="uiprefs-main">
+        <div class="alert alert-info alert-mb">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Drag rows to reorder priority (top = highest). Enable/disable toggles comment or uncomment the <code>include:</code> line in <code>unbound.conf</code>.
+        </div>
+        <div id="include-list">
+          {% for inc in includes_list %}
+          <div class="include-row" data-path="{{ inc.path }}" draggable="true">
+            <span class="include-drag-handle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
+            </span>
+            <div class="include-row-info">
+              <div class="include-row-path">{{ inc.path }}</div>
+              <div class="include-row-meta">
+                {% for t in inc.meta.allowed_tabs %}<span class="badge badge-gray badge-xs">{{ t }}</span>{% endfor %}
+                {% if inc.meta.description %}<span class="text-xs text-muted include-meta-desc">{{ inc.meta.description }}</span>{% endif %}
+                {% if not inc.exists %}<span class="badge badge-red badge-xs">file missing</span>{% endif %}
+              </div>
+            </div>
+            <label class="toggle" title="Enable/disable this include">
+              <input type="checkbox" class="inc-enabled" {% if inc.enabled %}checked{% endif %}>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          {% else %}
+          <p class="text-muted text-sm include-row-empty">No included files yet. Create a new config file in Settings to add one here.</p>
+          {% endfor %}
+        </div>
+        {% if includes_list %}
+        <button type="button" class="btn btn-orange flex" onclick="saveIncludes()" style="margin-top:12px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+          Save Include Order &amp; State
+        </button>
+        {% endif %}
+      </div>
+
+      <!-- ── SUB-CONFIG: allowed-tab editor ── -->
+      <div id="uiprefs-sub" style="display:none;">
+        <div class="alert alert-info alert-mb">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Select which tabs this file is allowed to edit. These are stored as a <code># gui-allowed:</code> comment
+          in the file header and enforce read-only mode for all other tabs.
+        </div>
+
+        <div class="form-section-title">Allowed Tabs</div>
+        <div id="uiprefs-tab-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px;">
+          <!-- populated by JS from ALL_TABS / TAB_LABELS -->
+        </div>
+
+        <div class="form-section-title">Description</div>
+        <div class="form-row">
+          <div class="form-label"><span class="key">gui-description</span><span class="desc">Short label shown in file cards and include rows.</span></div>
+          <input type="text" class="form-control" id="uiprefs-desc" maxlength="200" placeholder="e.g. Forwarding rules">
+        </div>
+
+        <div class="form-section-title form-section-title-spaced">Move Existing Settings</div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;margin-bottom:6px;">
+          <input type="checkbox" id="uiprefs-move">
+          Copy current values for selected tabs from <code>unbound.conf</code> into this file
+        </label>
+        <div class="text-xs text-muted" style="margin-left:22px;margin-bottom:16px;">
+          Existing entries in this file will be replaced with values from the main config.
+        </div>
+
+        <button type="button" class="btn btn-primary btn-sm" onclick="saveSubfileTabs()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+          Save Tab Permissions
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- APPLY BAR -->
+<div class="apply-bar" id="apply-bar">
   <button type="button" class="btn btn-orange" onclick="saveConfig()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
     Save Config
   </button>
   <button type="button" class="btn btn-primary" onclick="applyConfig()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg>
-    Apply &amp; Restart Unbound
+    Apply &amp; Restart
   </button>
   <button type="button" class="btn btn-ghost" onclick="validateConfig()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -700,10 +446,10 @@
 
 <!-- RAW EDITOR MODAL -->
 <div class="modal-overlay" id="modal-raw">
-  <div class="modal-box" style="max-width:800px;width:95%;">
-    <div class="modal-title">Raw Config Editor — <span style="color:var(--text-dim);font-size:14px;" id="raw-filename"></span></div>
-    <textarea class="code-area" id="raw-editor" style="min-height:400px;"></textarea>
-    <div class="btn-group" style="margin-top:12px;justify-content:flex-end;">
+  <div class="modal-box modal-raw-box">
+    <div class="modal-title">Raw Config Editor &#8212; <span class="raw-filename-label" id="raw-filename"></span></div>
+    <textarea class="code-area" id="raw-editor"></textarea>
+    <div class="modal-actions">
       <button class="btn btn-ghost" onclick="document.getElementById('modal-raw').classList.remove('show')">Cancel</button>
       <button class="btn btn-orange" onclick="saveRaw()">Save Raw Config</button>
     </div>
@@ -713,197 +459,190 @@
 {% endblock %}
 {% block scripts %}
 <script>
-// ── TAB INIT ──
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-  });
-});
-
-// ── TOGGLE LABELS ──
-document.querySelectorAll('.toggle input').forEach(inp => {
-  const lbl = inp.parentElement.parentElement.querySelector('.toggle-label');
-  if (lbl) lbl.textContent = inp.checked ? 'yes' : 'no';
-  inp.addEventListener('change', () => { if(lbl) lbl.textContent = inp.checked ? 'yes' : 'no'; });
-});
-
-// ── COLLECT FORM DATA ──
-function collectFormData() {
-  const data = {};
-  const form = document.getElementById('config-form');
-
-  // All inputs/selects
-  form.querySelectorAll('input[name]:not([type=checkbox]), select[name], textarea[name]').forEach(el => {
-    if (!el.name.endsWith('[]') && el.name !== 'access_control[]' && el.name !== 'local_zones[]' && el.name !== 'local_data[]') {
-      data[el.name] = el.value;
+// ── UI PREFS: dual-mode init ─────────────────────────────────────────────────
+(function initUiPrefs() {
+  var mainPanel = document.getElementById('uiprefs-main');
+  var subPanel  = document.getElementById('uiprefs-sub');
+  var title     = document.getElementById('uiprefs-title');
+  if (IS_MAIN) {
+    if (mainPanel) mainPanel.style.display = '';
+    if (subPanel)  subPanel.style.display  = 'none';
+    if (title) title.textContent = 'UI Preferences \u2014 Include File Manager';
+  } else {
+    if (mainPanel) mainPanel.style.display = 'none';
+    if (subPanel)  subPanel.style.display  = '';
+    if (title) title.textContent = 'UI Preferences \u2014 Tab Permissions for ' + FILE_META.filename;
+    // Build tab checkbox grid
+    var grid = document.getElementById('uiprefs-tab-grid');
+    if (grid) {
+      var currentAllowed = new Set(ALLOWED_TABS);
+      ALL_TABS.slice().sort().forEach(function(tab) {
+        var lbl = document.createElement('label');
+        lbl.style.cssText = 'display:flex;align-items:center;gap:7px;padding:6px 10px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:12px;';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.className = 'uiprefs-tab-cb'; cb.value = tab;
+        cb.checked = currentAllowed.has(tab);
+        lbl.appendChild(cb);
+        lbl.appendChild(document.createTextNode(TAB_LABELS[tab] || tab));
+        grid.appendChild(lbl);
+      });
     }
+    // Pre-fill description
+    var descEl = document.getElementById('uiprefs-desc');
+    if (descEl && FILE_META.description) descEl.value = FILE_META.description;
+  }
+})();
+
+// ── SAVE SUB-FILE TAB PERMISSIONS ────────────────────────────────────────────
+async function saveSubfileTabs() {
+  var tabs = Array.from(document.querySelectorAll('.uiprefs-tab-cb:checked')).map(function(cb){ return cb.value; });
+  if (!tabs.length) { toast('Select at least one tab', 'warning'); return; }
+  var desc = (document.getElementById('uiprefs-desc').value || '').trim();
+  var move = document.getElementById('uiprefs-move').checked;
+  var file = document.getElementById('file-selector').value;
+  toast('Saving tab permissions\u2026', 'info');
+  var res = await apiPost('/api/config/subfile/update_tabs', {
+    file: file, allowed_tabs: tabs, description: desc, move_existing: move
   });
+  if (res.success) { toast('Saved! Reloading\u2026', 'success'); setTimeout(function(){ location.reload(); }, 700); }
+  else showErr('Save failed', res);
+}
 
-  // Checkboxes
-  form.querySelectorAll('input[type=checkbox][name]').forEach(el => {
-    data[el.name] = el.checked ? 'yes' : 'no';
+// ── TAB NAV ──────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+    document.querySelectorAll('.tab-pane').forEach(function(p){ p.classList.remove('active'); });
+    btn.classList.add('active');
+    var pane = document.getElementById('tab-' + btn.dataset.tab);
+    if (pane) pane.classList.add('active');
+    var bar = document.getElementById('apply-bar');
+    if (bar) bar.style.display = btn.dataset.tab === 'uiprefs' ? 'none' : '';
   });
+});
 
-  // Access control
-  data.access_control = Array.from(form.querySelectorAll('input[name="access_control[]"]'))
-    .map(el => el.value.trim()).filter(Boolean);
-
-  // Local zones
-  data.local_zones = Array.from(form.querySelectorAll('input[name="local_zones[]"]'))
-    .map(el => el.value.trim()).filter(Boolean);
-
-  // Local data
-  data.local_data = Array.from(form.querySelectorAll('input[name="local_data[]"]'))
-    .map(el => el.value.trim()).filter(Boolean);
-
-  // Forward zones
-  const fwdZones = [];
-  document.querySelectorAll('.fwd-zone-entry').forEach(entry => {
-    const name  = entry.querySelector('.fwd-name')?.value.trim();
-    const addrs = entry.querySelector('.fwd-addrs')?.value.trim().split('\n').map(s=>s.trim()).filter(Boolean);
-    const tls   = entry.querySelector('.fwd-tls')?.checked;
-    const first = entry.querySelector('.fwd-first')?.checked;
-    if (name) fwdZones.push({ name, addrs: addrs||[], tls: tls||false, first: first||false });
+// ── TOGGLE LABELS ─────────────────────────────────────────────────────────────
+function wireToggles(root) {
+  (root || document).querySelectorAll('.toggle input').forEach(function(inp) {
+    var wrap = inp.closest('.toggle-wrap');
+    var lbl  = wrap ? wrap.querySelector('.toggle-label') : null;
+    if (lbl) lbl.textContent = inp.checked ? 'yes' : 'no';
+    inp.addEventListener('change', function() { if(lbl) lbl.textContent = inp.checked ? 'yes' : 'no'; });
   });
-  data.forward_zones = fwdZones;
+}
+wireToggles();
 
+// ── TAB LOCKING ───────────────────────────────────────────────────────────────
+function applyTabLocking() {
+  if (IS_MAIN) return;
+  var allowed = new Set(ALLOWED_TABS);
+  ALL_TABS.forEach(function(tab) {
+    if (allowed.has(tab)) return;
+    var pane = document.getElementById('tab-' + tab);
+    if (pane) {
+      pane.querySelectorAll('input,select,textarea,button[type=button]').forEach(function(el) {
+        el.disabled = true; el.style.opacity = '0.45'; el.style.pointerEvents = 'none';
+      });
+      pane.classList.add('tab-pane--locked');
+    }
+    var btn = document.querySelector('[data-tab="' + tab + '"]');
+    if (btn) { btn.classList.add('tab-btn--locked'); btn.title = 'Locked \u2014 not allowed for ' + FILE_META.filename; }
+  });
+}
+applyTabLocking();
+
+// ── COLLECT FORM DATA ─────────────────────────────────────────────────────────
+function collectFormData() {
+  var data = {}, form = document.getElementById('config-form');
+  form.querySelectorAll('input[name]:not([type=checkbox]):not([name$="[]"]),select[name],textarea[name]:not([name$="[]"])').forEach(function(el){ data[el.name]=el.value; });
+  form.querySelectorAll('input[type=checkbox][name]').forEach(function(el){ data[el.name]=el.checked?'yes':'no'; });
+  data.access_control = Array.from(form.querySelectorAll('input[name="access_control[]"]')).map(function(el){return el.value.trim();}).filter(Boolean);
+  data.local_zones    = Array.from(form.querySelectorAll('input[name="local_zones[]"]')).map(function(el){return el.value.trim();}).filter(Boolean);
+  data.local_data     = Array.from(form.querySelectorAll('input[name="local_data[]"]')).map(function(el){return el.value.trim();}).filter(Boolean);
+  var fz = [];
+  document.querySelectorAll('.fwd-zone-entry').forEach(function(e){
+    var n=e.querySelector('.fwd-name')?e.querySelector('.fwd-name').value.trim():'';
+    var a=e.querySelector('.fwd-addrs')?e.querySelector('.fwd-addrs').value.trim().split('\n').map(function(s){return s.trim();}).filter(Boolean):[];
+    var t=e.querySelector('.fwd-tls')?e.querySelector('.fwd-tls').checked:false;
+    var f=e.querySelector('.fwd-first')?e.querySelector('.fwd-first').checked:false;
+    if(n) fz.push({name:n,addrs:a,tls:t,first:f});
+  });
+  data.forward_zones = fz;
   return data;
 }
 
-async function saveConfig() {
-  const data = collectFormData();
-  toast('Saving configuration…', 'info');
-  const res = await apiPost('/api/config/save', data);
-  showApplyMsg(res);
-  if (res.success) toast('Configuration saved!', 'success');
-  else toast('Save failed: ' + (res.error||'unknown'), 'error', 7000);
+// ── ERROR DISPLAY ─────────────────────────────────────────────────────────────
+function showErr(ctx, res) {
+  var raw = res.detail||res.error||res.message||'Unknown error';
+  var msg = typeof raw==='string'?raw:JSON.stringify(raw);
+  msg = msg.replace(/^\[?\{?"detail":\s*"/,'').replace(/"?\}?\]?$/,'');
+  toast(ctx+': '+msg,'error',9000);
+  var el=document.getElementById('apply-msg');
+  if(el){el.className='msg error';el.textContent=msg;setTimeout(function(){el.className='msg';},8000);}
 }
 
-async function applyConfig() {
-  const data = collectFormData();
-  toast('Saving and applying configuration…', 'info');
-  const res = await apiPost('/api/config/apply', data);
-  showApplyMsg(res);
-  if (res.success) toast('Config saved and Unbound restarted!', 'success');
-  else toast('Apply failed: ' + (res.error||'unknown'), 'error', 7000);
-}
+async function saveConfig()   { toast('Saving\u2026','info'); var r=await apiPost('/api/config/save',collectFormData()); if(r.success){toast('Configuration saved!','success');var el=document.getElementById('apply-msg');if(el){el.className='msg success';el.textContent='Saved';setTimeout(function(){el.className='msg';},4000);}} else showErr('Save failed',r); }
+async function applyConfig()  { toast('Applying\u2026','info'); var r=await apiPost('/api/config/apply',collectFormData()); if(r.success) toast('Config saved and Unbound restarted!','success'); else showErr('Apply failed',r); }
+async function validateConfig(){ toast('Validating\u2026','info'); var r=await fetch('/api/config/validate',{method:'POST',headers:{'X-CSRF-Token':_csrfToken,'X-Requested-With':'XMLHttpRequest'}}).then(function(x){return x.json();}); if(r.valid) toast('Config is valid \u2713','success'); else toast('Validation failed: '+(r.output||''),'error',8000); }
 
-async function validateConfig() {
-  toast('Validating current config file…', 'info');
-  const res = await fetch('/api/config/validate', {method:'POST'}).then(r=>r.json());
-  if (res.valid) toast('Config is valid ✓', 'success');
-  else toast('Validation failed: ' + res.output, 'error', 8000);
-}
+function addACEntry(){var d=document.createElement('div');d.className='flex gap-1 mb-1 ac-entry';d.innerHTML='<input type="text" class="form-control" name="access_control[]" placeholder="192.168.1.0/24 allow"><button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">&#x2715;</button>';document.getElementById('ac-list').appendChild(d);}
+function addLZEntry(){var d=document.createElement('div');d.className='flex gap-1 mb-1 lz-entry';d.innerHTML='<input type="text" class="form-control" name="local_zones[]" placeholder="example.local. static"><button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">&#x2715;</button>';document.getElementById('lz-list').appendChild(d);}
+function addLDEntry(){var d=document.createElement('div');d.className='flex gap-1 mb-1 ld-entry';d.innerHTML='<input type="text" class="form-control" name="local_data[]" placeholder="host.local. IN A 192.168.1.10"><button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">&#x2715;</button>';document.getElementById('ld-list').appendChild(d);}
 
-function showApplyMsg(res) {
-  const el = document.getElementById('apply-msg');
-  el.className = 'msg ' + (res.success ? 'success' : 'error');
-  el.textContent = res.success ? (res.message||'Success') : (res.error||'Failed');
-  setTimeout(() => el.className = 'msg', 6000);
+function addFwdZone(){
+  var d=document.createElement('div');d.className='card fwd-zone-entry';
+  d.innerHTML='<div class="fwd-zone-body"><div class="fwd-zone-row"><div class="form-label"><span class="key">Zone Name</span></div><input type="text" class="form-control fwd-name" placeholder="."></div>'
+    +'<div class="fwd-zone-row"><div class="form-label"><span class="key">Forward Servers</span><span class="desc">One per line.</span></div><textarea class="form-control fwd-addrs" rows="3" placeholder="8.8.8.8&#10;1.1.1.1"></textarea></div>'
+    +'<div class="fwd-zone-row"><div class="form-label"><span class="key">forward-tls-upstream</span></div><div class="toggle-wrap"><label class="toggle"><input type="checkbox" class="fwd-tls" value="yes"><span class="toggle-slider"></span></label><span class="toggle-label">no</span></div></div>'
+    +'<div class="fwd-zone-row"><div class="form-label"><span class="key">forward-first</span></div><div class="toggle-wrap"><label class="toggle"><input type="checkbox" class="fwd-first" value="yes"><span class="toggle-slider"></span></label><span class="toggle-label">no</span></div></div>'
+    +'<div class="fwd-zone-actions"><button type="button" class="btn btn-danger btn-sm" onclick="this.closest(\'.fwd-zone-entry\').remove()">Remove Zone</button></div></div>';
+  wireToggles(d); document.getElementById('fwd-zones-list').appendChild(d);
 }
-
-// ── DYNAMIC ROWS ──
-function addACEntry() {
-  const div = document.createElement('div');
-  div.className = 'flex gap-1 mb-1 ac-entry';
-  div.innerHTML = '<input type="text" class="form-control" name="access_control[]" placeholder="192.168.1.0/24 allow"><button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>';
-  document.getElementById('ac-list').appendChild(div);
-}
-
-function addLZEntry() {
-  const div = document.createElement('div');
-  div.className = 'flex gap-1 mb-1 lz-entry';
-  div.innerHTML = '<input type="text" class="form-control" name="local_zones[]" placeholder="example.local. static"><button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>';
-  document.getElementById('lz-list').appendChild(div);
-}
-
-function addLDEntry() {
-  const div = document.createElement('div');
-  div.className = 'flex gap-1 mb-1 ld-entry';
-  div.innerHTML = '<input type="text" class="form-control" name="local_data[]" placeholder="host.local. IN A 192.168.1.10"><button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>';
-  document.getElementById('ld-list').appendChild(div);
-}
-
-function addFwdZone() {
-  const div = document.createElement('div');
-  div.className = 'card fwd-zone-entry';
-  div.style.cssText = 'margin-bottom:12px;border-color:var(--border-light)';
-  div.innerHTML = `<div class="card-body" style="padding:12px;">
-    <div class="form-row" style="border:none;padding:4px 0;">
-      <div class="form-label"><span class="key">Zone Name</span><span class="desc">DNS zone to forward. Use "." for all.</span></div>
-      <input type="text" class="form-control fwd-name" placeholder=".">
-    </div>
-    <div class="form-row" style="border:none;padding:4px 0;">
-      <div class="form-label"><span class="key">Forward Servers</span><span class="desc">One IP per line. Append @853 for DoT.</span></div>
-      <textarea class="form-control fwd-addrs" rows="3" placeholder="8.8.8.8&#10;8.8.4.4"></textarea>
-    </div>
-    <div class="form-row" style="border:none;padding:4px 0;">
-      <div class="form-label"><span class="key">forward-tls-upstream</span><span class="desc">Use DNS over TLS.</span></div>
-      <div class="toggle-wrap"><label class="toggle"><input type="checkbox" class="fwd-tls" value="yes"><span class="toggle-slider"></span></label><span class="toggle-label">no</span></div>
-    </div>
-    <div class="form-row" style="border:none;padding:4px 0;">
-      <div class="form-label"><span class="key">forward-first</span><span class="desc">Try direct first, forward on failure.</span></div>
-      <div class="toggle-wrap"><label class="toggle"><input type="checkbox" class="fwd-first" value="yes"><span class="toggle-slider"></span></label><span class="toggle-label">no</span></div>
-    </div>
-    <div style="text-align:right;margin-top:6px;"><button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.fwd-zone-entry').remove()">Remove Zone</button></div>
-  </div>`;
-  // Attach toggle labels
-  div.querySelectorAll('.toggle input').forEach(inp => {
-    const lbl = inp.parentElement.parentElement.querySelector('.toggle-label');
-    inp.addEventListener('change', () => { if(lbl) lbl.textContent = inp.checked?'yes':'no'; });
-  });
-  document.getElementById('fwd-zones-list').appendChild(div);
-}
-
-function addPreset(name, addrs, tls=false) {
+function addPreset(name,addrs,tls){
   addFwdZone();
-  const entries = document.querySelectorAll('.fwd-zone-entry');
-  const last = entries[entries.length - 1];
-  last.querySelector('.fwd-name').value = '.';
-  last.querySelector('.fwd-addrs').value = addrs;
-  if (tls && last.querySelector('.fwd-tls')) {
-    last.querySelector('.fwd-tls').checked = true;
-    const lbl = last.querySelector('.fwd-tls').parentElement.parentElement.querySelector('.toggle-label');
-    if (lbl) lbl.textContent = 'yes';
-  }
-  toast(`Added ${name} preset`, 'info');
+  var e=document.querySelectorAll('.fwd-zone-entry'),last=e[e.length-1];
+  last.querySelector('.fwd-name').value='.'; last.querySelector('.fwd-addrs').value=addrs;
+  if(tls){var cb=last.querySelector('.fwd-tls');if(cb){cb.checked=true;var w=cb.closest('.toggle-wrap');if(w){var lb=w.querySelector('.toggle-label');if(lb)lb.textContent='yes';}}}
+  toast('Added '+name+' preset','info');
 }
 
-// ── RAW EDITOR ──
-async function loadRawEditor() {
-  const d = await fetch('/api/config/raw').then(r=>r.json());
-  if (!d.success) { toast('Failed to load raw config: '+d.error, 'error'); return; }
-  document.getElementById('raw-editor').value = d.content;
-  document.getElementById('raw-filename').textContent = d.file;
+async function loadRawEditor(){
+  var d=await fetch('/api/config/raw',{headers:{'X-Requested-With':'XMLHttpRequest'}}).then(function(r){return r.json();});
+  if(!d.success){toast('Failed: '+(d.error||''),'error');return;}
+  document.getElementById('raw-editor').value=d.content;
+  document.getElementById('raw-filename').textContent=d.file;
   document.getElementById('modal-raw').classList.add('show');
 }
-
-async function saveRaw() {
-  const content = document.getElementById('raw-editor').value;
-  toast('Saving raw config…', 'info');
-  const d = await apiPost('/api/config/raw/save', {content});
+async function saveRaw(){
+  var content=document.getElementById('raw-editor').value;
+  toast('Saving raw config\u2026','info');
+  var d=await apiPost('/api/config/raw/save',{content:content});
   document.getElementById('modal-raw').classList.remove('show');
-  if (d.success) toast('Raw config saved!', 'success');
-  else toast('Save failed: '+d.error, 'error', 7000);
+  if(d.success) toast('Raw config saved!','success'); else showErr('Save failed',d);
+}
+document.getElementById('modal-raw').addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');});
+
+async function switchConfigFile(file){
+  var d=await apiPost('/api/config/set_file',{file:file});
+  if(d.success){toast('Switched to: '+file,'info');setTimeout(function(){location.reload();},600);} else showErr('Switch failed',d);
 }
 
-document.getElementById('modal-raw').addEventListener('click', function(e) {
-  if (e.target === this) this.classList.remove('show');
-});
+// ── INCLUDE LIST DRAG & DROP ──────────────────────────────────────────────────
+(function(){
+  var list=document.getElementById('include-list'); if(!list)return;
+  var dragging=null;
+  list.addEventListener('dragstart',function(e){dragging=e.target.closest('.include-row');if(dragging)dragging.style.opacity='0.4';});
+  list.addEventListener('dragend',function(){if(dragging){dragging.style.opacity='';dragging=null;}});
+  list.addEventListener('dragover',function(e){
+    e.preventDefault(); var row=e.target.closest('.include-row');
+    if(row&&row!==dragging){var r=row.getBoundingClientRect();if(e.clientY<r.top+r.height/2)list.insertBefore(dragging,row);else list.insertBefore(dragging,row.nextSibling);}
+  });
+})();
 
-// ── FILE SWITCHER ──
-async function switchConfigFile(file) {
-  const d = await apiPost('/api/config/set_file', {file});
-  if (d.success) { toast('Switched to: '+file, 'info'); setTimeout(()=>location.reload(), 800); }
-  else toast('Failed: '+d.error, 'error');
-}
-
-function reloadPage() {
-  const sel = document.getElementById('file-selector');
-  if (sel) switchConfigFile(sel.value);
+async function saveIncludes(){
+  var files=Array.from(document.querySelectorAll('#include-list .include-row')).map(function(r){return{path:r.dataset.path,enabled:r.querySelector('.inc-enabled').checked};});
+  var res=await apiPost('/api/config/includes/save',{files:files});
+  if(res.success) toast('Include order saved!','success'); else showErr('Save failed',res);
 }
 </script>
 {% endblock %}

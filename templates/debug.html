@@ -2,7 +2,8 @@
 {% block content %}
 
 <div class="page-header">
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff7a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff7a1a" stroke-width="2" stroke-linecap="round"
+    stroke-linejoin="round">
     <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
     <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"></path>
     <line x1="12" y1="17" x2="12.01" y2="17"></line>
@@ -15,9 +16,11 @@
 
 <div class="alert alert-info" style="margin-bottom:16px;">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="8" x2="12" y2="12" />
+    <line x1="12" y1="16" x2="12.01" y2="16" />
   </svg>
-  All DNS lookups are sent to <code>127.0.0.1</code> — your local Unbound instance — to test it directly.
+  <p>All DNS lookups are sent to <code>127.0.0.1</code> — your local Unbound instance — to test it directly.</p>
 </div>
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
@@ -29,8 +32,8 @@
     <div class="card">
       <div class="card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-          <circle cx="11" cy="11" r="8"/>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
         <h3>DNS Lookup <span style="font-size:11px;color:var(--text-muted);font-weight:400;">via 127.0.0.1</span></h3>
       </div>
@@ -58,8 +61,8 @@
         <div class="btn-group" style="flex-wrap:wrap;gap:6px;margin-top:6px;">
           <button class="btn btn-primary btn-sm" onclick="runDig()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-              <circle cx="11" cy="11" r="8"/>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
             dig @127.0.0.1
           </button>
@@ -76,7 +79,7 @@
     <div class="card">
       <div class="card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
         </svg>
         <h3>Connectivity</h3>
       </div>
@@ -89,7 +92,7 @@
         <div class="btn-group" style="flex-wrap:wrap;gap:6px;margin-top:6px;">
           <button class="btn btn-primary btn-sm" onclick="runTool2('ping')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
             </svg>
             Ping (4 packets)
           </button>
@@ -103,7 +106,7 @@
     <div class="card">
       <div class="card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
         </svg>
         <h3>Unbound Diagnostics</h3>
       </div>
@@ -129,15 +132,16 @@
 
   <!-- RIGHT COLUMN — Output -->
   <div>
-    <div class="card" style="position:sticky;">
+    <div class="card" style="position:sticky;top:16px;">
       <div class="card-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-          <rect x="2" y="3" width="20" height="14" rx="2"/>
-          <line x1="8" y1="21" x2="16" y2="21"/>
-          <line x1="12" y1="17" x2="12" y2="21"/>
+          <rect x="2" y="3" width="20" height="14" rx="2" />
+          <line x1="8" y1="21" x2="16" y2="21" />
+          <line x1="12" y1="17" x2="12" y2="21" />
         </svg>
         <h3>Output</h3>
-        <span id="dbg-cmd-label" style="flex:1;font-size:11px;color:var(--text-muted);margin-left:4px;font-family:monospace;"></span>
+        <span id="dbg-cmd-label"
+          style="flex:2;font-size:11px;color:var(--text-muted);margin-left:4px;font-family:monospace;"></span>
         <button class="btn btn-ghost btn-sm" onclick="clearOutput()">Clear</button>
         <button class="btn btn-ghost btn-sm" onclick="copyOutput()">Copy</button>
       </div>
@@ -187,7 +191,7 @@
       if (!d.success && d.rc !== 0) {
         toast(`Command exited with error (rc=${d.rc})`, 'warning');
       }
-    } catch(e) {
+    } catch (e) {
       setOutput('Request failed: ' + e, null);
       toast('Request failed', 'error');
     }
@@ -202,7 +206,7 @@
 
   async function runTool(tool) {
     const target = getTarget1();
-    const noTargetTools = ['check_control','check_conf','stats','local_zones','local_data','dump_cache'];
+    const noTargetTools = ['check_control', 'check_conf', 'stats', 'local_zones', 'local_data', 'dump_cache'];
     if (!target && !noTargetTools.includes(tool)) {
       toast('Enter a hostname or IP first', 'warning'); return;
     }

@@ -53,10 +53,39 @@ templates.env.globals["url_for"] = lambda endpoint, **kw: (
     f"/static/{kw.get('filename','')}" if endpoint == "static" else f"/{endpoint}"
 )
 
-DEFAULT_CONFIG_FILE = "/etc/unbound/unbound.conf"
-DEFAULT_CONFIG_DIR  = "/etc/unbound/unbound.conf.d/"
+# ── Load .env (simple built-in parser — no extra dependencies) ───────────────
+def _load_dotenv(env_path: Path) -> None:
+    """Read KEY=VALUE pairs from .env, set into os.environ if not already set."""
+    if not env_path.exists():
+        return
+    with open(env_path) as _f:
+        for _line in _f:
+            _line = _line.strip()
+            if not _line or _line.startswith("#") or "=" not in _line:
+                continue
+            _k, _, _v = _line.partition("=")
+            _k = _k.strip(); _v = _v.strip().strip('"').strip("'")
+            if _k and _k not in os.environ:
+                os.environ[_k] = _v
+
+_load_dotenv(BASE_DIR / ".env")
+
+def _env(key: str, default: str) -> str:
+    return os.environ.get(key, default)
+
+# ── Resolved paths (override any of these in .env) ───────────────────────────
+DEFAULT_CONFIG_FILE = _env("DEFAULT_CONFIG_FILE", "/etc/unbound/unbound.conf")
+DEFAULT_CONFIG_DIR  = _env("DEFAULT_CONFIG_DIR",  "/etc/unbound/unbound.conf.d/")
 ALLOWED_CONFIG_DIRS = [DEFAULT_CONFIG_DIR, "/etc/unbound/"]
-BACKUP_DIR = str(BASE_DIR / "backups")
+BACKUP_DIR          = str(Path(_env("BACKUP_DIR", str(BASE_DIR / "backups"))).resolve())
+UNBOUND_SERVER_KEY  = _env("UNBOUND_SERVER_KEY",  "/etc/unbound/unbound_server.key")
+UNBOUND_SERVER_PEM  = _env("UNBOUND_SERVER_PEM",  "/etc/unbound/unbound_server.pem")
+UNBOUND_CONTROL_KEY = _env("UNBOUND_CONTROL_KEY", "/etc/unbound/unbound_control.key")
+UNBOUND_CONTROL_PEM = _env("UNBOUND_CONTROL_PEM", "/etc/unbound/unbound_control.pem")
+HTTPS_ENABLED       = _env("HTTPS_ENABLED", "true").lower() not in {"false","0","no"}
+HTTP_PORT           = int(_env("HTTP_PORT",  "8080"))
+HTTPS_PORT          = int(_env("HTTPS_PORT", "8443"))
+
 os.makedirs(BACKUP_DIR, exist_ok=True)
 
 init_creds()
@@ -91,7 +120,6 @@ def _login_required(request: Request):
     return username
 
 def _template(request: Request, name: str, ctx: dict):
-    ctx["request"] = request
     ctx["csrf_token"] = _csrf_token(request)
     ctx.setdefault("session", request.session)
     return templates.TemplateResponse(request=request, name=name, context=ctx)
@@ -476,7 +504,239 @@ def build_unbound_conf(data: dict) -> str:
             if zone.get("tls"):  lines.append("    forward-tls-upstream: yes")
             if zone.get("first"): lines.append("    forward-first: yes")
 
+    # Always preserve remote-control so unbound-control / stats always work
+    lines += ["", "remote-control:", "    control-enable: yes", ""]
+
     return "\n".join(lines) + "\n"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  TAB → KEY MAPPING  (which server: keys belong to each config tab)
+# ─────────────────────────────────────────────────────────────────────────────
+
+ALL_TABS: set = {"basic","security","performance","logging","access","forwarding","local","dnssec","advanced"}
+
+TAB_SERVER_KEYS: Dict[str, List[str]] = {
+    "basic":       ["interface","port","outgoing-interface","do-ip4","do-ip6","do-udp","do-tcp",
+                    "num-threads","verbosity","do-daemonize","username","directory","chroot",
+                    "pidfile","root-hints"],
+    "security":    ["hide-identity","hide-version","hide-trustanchor","identity","version",
+                    "harden-glue","harden-dnssec-stripped","harden-below-nxdomain",
+                    "harden-referral-path","harden-algo-downgrade","harden-short-bufsize",
+                    "harden-large-queries","use-caps-for-id","qname-minimisation",
+                    "qname-minimisation-strict","aggressive-nsec","minimal-responses",
+                    "do-not-query-localhost","ratelimit","ip-ratelimit",
+                    "unwanted-reply-threshold","private-address","ignore-cd-flag"],
+    "performance": ["prefetch","prefetch-key","cache-min-ttl","cache-max-ttl",
+                    "cache-max-negative-ttl","serve-expired","serve-expired-ttl",
+                    "rrset-roundrobin","msg-cache-size","rrset-cache-size","neg-cache-size",
+                    "msg-buffer-size","outgoing-range","num-queries-per-thread",
+                    "so-rcvbuf","so-sndbuf","edns-buffer-size","so-reuseport",
+                    "infra-cache-numhosts","infra-host-ttl","jostle-timeout"],
+    "logging":     ["use-syslog","logfile","log-queries","log-replies","log-tag-queryreply",
+                    "log-local-actions","log-servfail","extended-statistics",
+                    "statistics-interval","statistics-cumulative","log-identity"],
+    "access":      [],   # uses access_control list
+    "forwarding":  [],   # uses forward_zones list
+    "local":       [],   # uses local_zones + local_data lists
+    "dnssec":      ["module-config","auto-trust-anchor-file","trust-anchor-file",
+                    "val-permissive-mode","val-clean-additional","add-holddown",
+                    "del-holddown","keep-missing","disable-dnssec-lame-check"],
+    "advanced":    ["dns64","dns64-prefix","dns64-synthall","tls-upstream","tls-cert-bundle",
+                    "target-fetch-policy","unblock-lan-zones","insecure-lan-zones",
+                    "ip-transparent","delay-close","private-domain"],
+}
+
+_BOOL_OPTS_SET: set = {
+    "do-ip4","do-ip6","do-udp","do-tcp","do-daemonize","hide-identity","hide-version",
+    "hide-trustanchor","harden-glue","harden-dnssec-stripped","harden-below-nxdomain",
+    "harden-referral-path","harden-algo-downgrade","harden-short-bufsize","harden-large-queries",
+    "use-caps-for-id","qname-minimisation","qname-minimisation-strict","aggressive-nsec",
+    "minimal-responses","do-not-query-localhost","ignore-cd-flag","prefetch","prefetch-key",
+    "serve-expired","rrset-roundrobin","log-queries","log-replies","log-tag-queryreply",
+    "log-local-actions","log-servfail","use-syslog","extended-statistics",
+    "statistics-cumulative","val-permissive-mode","val-clean-additional",
+    "disable-dnssec-lame-check","dns64","dns64-synthall","tls-upstream",
+    "unblock-lan-zones","insecure-lan-zones","ip-transparent","so-reuseport",
+}
+
+# ── include-section markers ───────────────────────────────────────────────────
+_INCL_START = "# gui-includes-start"
+_INCL_END   = "# gui-includes-end"
+_INCL_HDR   = "# --- GUI managed includes - do not edit this section manually ---"
+
+
+def _clean_error(context: str, raw: str = "") -> str:
+    """Strip unbound timestamps/PIDs from error, return short human message."""
+    if not raw:
+        return context
+    clean = re.sub(r"\[\d{7,}\]", "", raw)
+    clean = re.sub(r"\w[\w\-]*\[\d+:\d+\]\s*", "", clean)
+    clean = re.sub(r"[ \t]+", " ", clean).strip()
+    clean = re.sub(r"\n+", " | ", clean)
+    if len(clean) > 300:
+        clean = clean[:297] + "..."
+    return f"{context} — {clean}" if clean else context
+
+
+def parse_file_meta(filepath: str) -> dict:
+    """Read # gui-allowed: and # gui-description: header lines."""
+    meta: Dict[str, Any] = {
+        "is_main":      filepath == DEFAULT_CONFIG_FILE,
+        "allowed_tabs": [],
+        "description":  "",
+        "filename":     os.path.basename(filepath),
+        "filepath":     filepath,
+    }
+    if meta["is_main"]:
+        return meta
+    try:
+        with open(filepath) as f:
+            for line in f:
+                line = line.strip()
+                if not line.startswith("#"):
+                    break
+                if line.startswith("# gui-allowed:"):
+                    tabs_raw = line.split(":", 1)[1].strip()
+                    meta["allowed_tabs"] = [
+                        t.strip() for t in tabs_raw.split(",")
+                        if t.strip() in ALL_TABS
+                    ]
+                elif line.startswith("# gui-description:"):
+                    meta["description"] = line.split(":", 1)[1].strip()[:200]
+    except Exception:
+        pass
+    return meta
+
+
+def parse_includes(content: str) -> List[Dict]:
+    """Extract {path, enabled} entries from the gui-includes section."""
+    entries: List[Dict] = []
+    in_sec = False
+    for line in content.splitlines():
+        s = line.strip()
+        if s == _INCL_START:   in_sec = True;  continue
+        if s == _INCL_END:     break
+        if not in_sec:         continue
+        enabled = not s.startswith("#")
+        m = re.search(r'include:\s*"([^"]+)"', s)
+        if m:
+            entries.append({"path": m.group(1), "enabled": enabled})
+    return entries
+
+
+def build_includes_section(files: List[Dict]) -> str:
+    rows = ["", _INCL_HDR, _INCL_START]
+    for f in files:
+        if f.get("enabled", True):
+            rows.append(f'include: "{f["path"]}"')
+        else:
+            rows.append(f'# include: "{f["path"]}"  # disabled')
+    rows.append(_INCL_END)
+    return "\n".join(rows)
+
+
+def _splice_includes(content: str, includes: List[Dict]) -> str:
+    """Replace or append the gui-includes section in a config string."""
+    new_section = build_includes_section(includes)
+    if _INCL_START in content:
+        return re.sub(
+            r"\n" + re.escape(_INCL_HDR) + r".*?" + re.escape(_INCL_END),
+            new_section, content, flags=re.DOTALL,
+        )
+    return content.rstrip("\n") + "\n" + new_section + "\n"
+
+
+def add_to_includes(conf_path: str, new_file_path: str) -> bool:
+    """Append new_file_path to gui-includes in conf_path if not already there."""
+    try:
+        content  = Path(conf_path).read_text() if os.path.exists(conf_path) else ""
+        includes = parse_includes(content)
+        if any(f["path"] == new_file_path for f in includes):
+            return True
+        includes.append({"path": new_file_path, "enabled": True})
+        new_content = _splice_includes(content, includes)
+        proc = subprocess.run(["sudo", "tee", conf_path],
+                              input=new_content, capture_output=True, text=True)
+        return proc.returncode == 0
+    except Exception:
+        return False
+
+
+def _san(v: str) -> str:
+    return re.sub(r'[\r\n"\'\\]', "", str(v).strip())[:500]
+
+
+def _bv(v: str) -> str:
+    return "yes" if str(v).lower() in {"yes","on","true","1"} else "no"
+
+
+def build_subfile_conf(data: dict, allowed_tabs: List[str], description: str = "") -> str:
+    """Build a partial conf that only covers the tabs listed in allowed_tabs."""
+    header = [f"# gui-allowed: {','.join(allowed_tabs)}"]
+    if description:
+        header.append(f"# gui-description: {_san(description)}")
+    header += [f"# Generated by Unbound Web GUI — {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", ""]
+
+    server_lines: List[str] = []
+    for tab in allowed_tabs:
+        for key in TAB_SERVER_KEYS.get(tab, []):
+            val = data.get(key, "")
+            if not val:
+                continue
+            if key in _BOOL_OPTS_SET:
+                server_lines.append(f"    {key}: {_bv(val)}")
+            else:
+                server_lines.append(f"    {key}: {_san(val)}")
+        if tab == "access":
+            for ac in data.get("access_control", []):
+                c = _san(ac)
+                if c:
+                    server_lines.append(f"    access-control: {c}")
+        if tab == "local":
+            for lz in data.get("local_zones", []):
+                c = _san(lz)
+                if c:
+                    server_lines.append(f"    local-zone: {c}")
+            for ld in data.get("local_data", []):
+                c = _san(ld)
+                if c:
+                    server_lines.append(f'    local-data: "{c}"')
+
+    lines = header[:]
+    if server_lines:
+        lines += ["server:"] + server_lines
+
+    if "forwarding" in allowed_tabs:
+        for zone in data.get("forward_zones", []):
+            if zone.get("name"):
+                n = _san(zone["name"])
+                lines += ["", "forward-zone:", f'    name: "{n}"']
+                for addr in zone.get("addrs", []):
+                    a = re.sub(r'[^\w.:@#\-]', "", addr.strip())[:50]
+                    if a:
+                        lines.append(f"    forward-addr: {a}")
+                if zone.get("tls"):   lines.append("    forward-tls-upstream: yes")
+                if zone.get("first"): lines.append("    forward-first: yes")
+
+    return "\n".join(lines) + "\n"
+
+
+def _write_config(cfg_file: str, conf_text: str) -> None:
+    """Backup, write via sudo tee, then validate with unbound-checkconf."""
+    if os.path.exists(cfg_file):
+        ts = datetime.now().strftime("%Y%m%d%H%M%S")
+        try:
+            shutil.copy2(cfg_file, cfg_file + f".bak.{ts}")
+        except Exception:
+            pass
+    proc = subprocess.run(["sudo", "tee", cfg_file],
+                          input=conf_text, capture_output=True, text=True)
+    if proc.returncode != 0:
+        raise HTTPException(500, detail=_clean_error("Write failed", proc.stderr))
+    _, val_err, val_rc = run_cmd(["unbound-checkconf"])
+    if val_rc != 0:
+        raise HTTPException(422, detail=_clean_error("Config validation failed", val_err))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -529,11 +789,43 @@ class ConfigFilePayload(BaseModel):
 
 class CreateFilePayload(BaseModel):
     filename: str
+    allowed_tabs: List[str] = []
+    description: str = ""
+    move_existing: bool = False
 
     @field_validator("filename")
     @classmethod
     def validate_filename(cls, v: str) -> str:
         return _safe_filename(v)
+
+    @field_validator("allowed_tabs")
+    @classmethod
+    def validate_tabs(cls, v: List[str]) -> List[str]:
+        return [t.strip() for t in v if t.strip() in ALL_TABS]
+
+    @field_validator("description")
+    @classmethod
+    def sanitize_desc(cls, v: str) -> str:
+        return re.sub(r'[\r\n]', ' ', v.strip())[:200]
+
+
+class IncludeFile(BaseModel):
+    path: str
+    enabled: bool = True
+
+    @field_validator("path")
+    @classmethod
+    def validate_path(cls, v: str) -> str:
+        real = os.path.realpath(v)
+        if not real.startswith(os.path.realpath(DEFAULT_CONFIG_DIR)):
+            raise ValueError(f"Path not in allowed directory: {v!r}")
+        if not real.endswith(".conf"):
+            raise ValueError("Must be a .conf file")
+        return real
+
+
+class IncludesSavePayload(BaseModel):
+    files: List[IncludeFile]
 
 
 class BackupPayload(BaseModel):
@@ -678,12 +970,50 @@ async def home(request: Request, _user: str = Depends(_login_required)):
 
 @app.get("/config", response_class=HTMLResponse)
 async def config_page(request: Request, _user: str = Depends(_login_required)):
-    cfg_file = get_config_file(request)
-    parsed   = parse_unbound_conf(cfg_file)
-    conf_d   = sorted(glob.glob(DEFAULT_CONFIG_DIR + "*.conf"))
+    cfg_file  = get_config_file(request)
+    is_main   = (cfg_file == DEFAULT_CONFIG_FILE)
+    parsed    = parse_unbound_conf(cfg_file)
+    file_meta = parse_file_meta(cfg_file)
+    conf_d    = sorted(glob.glob(DEFAULT_CONFIG_DIR + "*.conf"))
+
+    if not is_main:
+        # Merge main config values so disabled tabs still show readable content
+        main_p = parse_unbound_conf(DEFAULT_CONFIG_FILE)
+        merged_server = {**main_p.get("server", {}), **parsed.get("server", {})}
+        parsed["server"] = merged_server
+        allowed = set(file_meta.get("allowed_tabs", []))
+        if "access"     not in allowed: parsed["access_control"] = main_p.get("access_control", [])
+        if "forwarding" not in allowed: parsed["forward_zones"]  = main_p.get("forward_zones", [])
+        if "local"      not in allowed:
+            parsed["local_zones"] = main_p.get("local_zones", [])
+            parsed["local_data"]  = main_p.get("local_data", [])
+
+    # For UI-prefs tab: current includes list
+    main_content  = Path(DEFAULT_CONFIG_FILE).read_text() if os.path.exists(DEFAULT_CONFIG_FILE) else ""
+    includes_list = parse_includes(main_content)
+    for inc in includes_list:
+        # FIX: always populate 'exists' — missing this key caused Jinja2 to treat
+        # it as Undefined (falsy), so `not inc.exists` was always True → "file missing"
+        inc["exists"] = os.path.exists(inc["path"])
+        inc["meta"]   = parse_file_meta(inc["path"])
+
+    import json as _json
     return _template(request, "config.html", {
-        "cfg": parsed, "cfg_file": cfg_file,
-        "conf_d_files": conf_d, "active_tab": "config",
+        "cfg":            parsed,
+        "cfg_file":       cfg_file,
+        "cfg_filename":   os.path.basename(cfg_file),
+        "conf_d_files":   conf_d,
+        "active_tab":     "config",
+        "file_meta":      file_meta,
+        "is_main_config": is_main,
+        "includes_list":  includes_list,
+        "file_meta_json": _json.dumps(file_meta),
+        "all_tabs_json":  _json.dumps(sorted(ALL_TABS)),
+        "tab_labels_json": _json.dumps({
+            "basic":"Basic","security":"Security","performance":"Performance",
+            "logging":"Logging","access":"Access Control","forwarding":"Forwarding",
+            "local":"Local Zones","dnssec":"DNSSEC","advanced":"Advanced",
+        }),
     })
 
 
@@ -817,22 +1147,31 @@ async def api_config_create_file(
     _user: str = Depends(_login_required),
     _csrf: None = Depends(_verify_csrf),
 ):
-    filepath = os.path.join(DEFAULT_CONFIG_DIR, payload.filename)
+    filepath  = os.path.join(DEFAULT_CONFIG_DIR, payload.filename)
     real_path = os.path.realpath(filepath)
     if not real_path.startswith(os.path.realpath(DEFAULT_CONFIG_DIR)):
-        raise HTTPException(400, detail="Invalid file path")
+        raise HTTPException(400, detail="Invalid file path — must be inside conf.d/")
+    if not payload.allowed_tabs:
+        raise HTTPException(400, detail="Select at least one allowed tab for this file.")
 
-    stub = (
-        "# Unbound configuration\n"
-        "# Created by Unbound Web GUI\n"
-        f"# {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-        "server:\n    # Add your configuration here\n"
-    )
+    # Optionally seed with existing main-config values for allowed tabs
+    seed_data: Dict[str, Any] = {
+        "forward_zones": [], "access_control": [], "local_zones": [], "local_data": []
+    }
+    if payload.move_existing:
+        mp = parse_unbound_conf(DEFAULT_CONFIG_FILE)
+        seed_data = {**mp.get("server", {}), "forward_zones": mp.get("forward_zones", []),
+                     "access_control": mp.get("access_control", []),
+                     "local_zones": mp.get("local_zones", []),
+                     "local_data": mp.get("local_data", [])}
+
+    stub = build_subfile_conf(seed_data, payload.allowed_tabs, payload.description)
     try:
         proc = subprocess.run(["sudo", "tee", real_path],
                               input=stub, capture_output=True, text=True)
         if proc.returncode != 0:
-            raise HTTPException(500, detail=f"Write failed: {proc.stderr}")
+            raise HTTPException(500, detail=_clean_error("Write failed", proc.stderr))
+        add_to_includes(DEFAULT_CONFIG_FILE, real_path)
         request.session["config_file"] = real_path
         return {"success": True, "file": real_path}
     except HTTPException:
@@ -852,11 +1191,53 @@ async def api_config_delete_file(
         raise HTTPException(404, detail="File not found")
     try:
         os.remove(payload.file)
+        # Remove from gui-includes section in main config
+        if os.path.exists(DEFAULT_CONFIG_FILE):
+            content  = Path(DEFAULT_CONFIG_FILE).read_text()
+            includes = [f for f in parse_includes(content) if f["path"] != payload.file]
+            if _INCL_START in content:
+                new_content = _splice_includes(content, includes)
+                subprocess.run(["sudo", "tee", DEFAULT_CONFIG_FILE],
+                               input=new_content, capture_output=True, text=True)
         if request.session.get("config_file") == payload.file:
             request.session["config_file"] = DEFAULT_CONFIG_FILE
         return {"success": True}
     except Exception as e:
         raise HTTPException(500, detail=str(e))
+
+
+@app.get("/api/config/includes")
+async def api_config_get_includes(_user: str = Depends(_login_required)):
+    content  = Path(DEFAULT_CONFIG_FILE).read_text() if os.path.exists(DEFAULT_CONFIG_FILE) else ""
+    includes = parse_includes(content)
+    enriched = []
+    for inc in includes:
+        meta = parse_file_meta(inc["path"])
+        enriched.append({**inc, "filename": os.path.basename(inc["path"]),
+                         "exists": os.path.exists(inc["path"]),
+                         "allowed_tabs": meta.get("allowed_tabs", []),
+                         "description": meta.get("description", "")})
+    return {"success": True, "includes": enriched}
+
+
+@app.post("/api/config/includes/save")
+async def api_config_save_includes(
+    payload: IncludesSavePayload,
+    _user: str = Depends(_login_required),
+    _csrf: None = Depends(_verify_csrf),
+):
+    if not os.path.exists(DEFAULT_CONFIG_FILE):
+        raise HTTPException(404, detail="Main config file not found")
+    content     = Path(DEFAULT_CONFIG_FILE).read_text()
+    new_content = _splice_includes(content, [{"path": f.path, "enabled": f.enabled} for f in payload.files])
+    proc = subprocess.run(["sudo", "tee", DEFAULT_CONFIG_FILE],
+                          input=new_content, capture_output=True, text=True)
+    if proc.returncode != 0:
+        raise HTTPException(500, detail=_clean_error("Write failed", proc.stderr))
+    _, val_err, val_rc = run_cmd(["unbound-checkconf"])
+    if val_rc != 0:
+        raise HTTPException(422, detail=_clean_error("Config validation failed", val_err))
+    return {"success": True}
 
 
 @app.get("/api/config/raw")
@@ -877,15 +1258,36 @@ async def api_config_raw_save(
     _csrf: None = Depends(_verify_csrf),
 ):
     cfg_file = get_config_file(request)
-    _safe_config_path(cfg_file)  # re-validate
+    _safe_config_path(cfg_file)
     proc = subprocess.run(["sudo", "tee", cfg_file],
                           input=payload.content, capture_output=True, text=True)
     if proc.returncode != 0:
-        raise HTTPException(500, detail=proc.stderr)
+        raise HTTPException(500, detail=_clean_error("Write failed", proc.stderr))
     _, err, rc = run_cmd(["unbound-checkconf"])
     if rc != 0:
-        raise HTTPException(422, detail=f"Config validation failed: {err}")
+        raise HTTPException(422, detail=_clean_error("Config validation failed", err))
     return {"success": True}
+
+
+def _build_conf_text(cfg_file: str, data: dict) -> str:
+    """Build conf text appropriately for main config vs sub-file."""
+    if cfg_file == DEFAULT_CONFIG_FILE:
+        conf_text = build_unbound_conf(data)
+        # Preserve the gui-includes section
+        if os.path.exists(cfg_file):
+            existing = parse_includes(Path(cfg_file).read_text())
+            if existing:
+                conf_text = _splice_includes(conf_text, existing)
+        return conf_text
+    else:
+        meta    = parse_file_meta(cfg_file)
+        allowed = meta.get("allowed_tabs", [])
+        if not allowed:
+            raise HTTPException(400, detail=(
+                "No gui-allowed tabs defined in this file. "
+                "Use Raw Editor to add '# gui-allowed: tab1,tab2' at the top of the file."
+            ))
+        return build_subfile_conf(data, allowed, meta.get("description", ""))
 
 
 @app.post("/api/config/save")
@@ -894,27 +1296,11 @@ async def api_config_save(
     _user: str = Depends(_login_required),
     _csrf: None = Depends(_verify_csrf),
 ):
-    data = await request.json()
+    data     = await request.json()
     cfg_file = get_config_file(request)
     _safe_config_path(cfg_file)
-
-    conf_text = build_unbound_conf(data)
-
-    # Backup existing
-    if os.path.exists(cfg_file):
-        ts = datetime.now().strftime("%Y%m%d%H%M%S")
-        try: shutil.copy2(cfg_file, cfg_file + f".bak.{ts}")
-        except Exception: pass
-
-    proc = subprocess.run(["sudo", "tee", cfg_file],
-                          input=conf_text, capture_output=True, text=True)
-    if proc.returncode != 0:
-        raise HTTPException(500, detail=proc.stderr)
-
-    _, val_err, val_rc = run_cmd(["unbound-checkconf"])
-    if val_rc != 0:
-        raise HTTPException(422, detail=f"Config validation failed: {val_err}")
-    return {"success": True, "message": "Configuration saved successfully"}
+    _write_config(cfg_file, _build_conf_text(cfg_file, data))
+    return {"success": True, "message": "Configuration saved"}
 
 
 @app.post("/api/config/apply")
@@ -923,30 +1309,15 @@ async def api_config_apply(
     _user: str = Depends(_login_required),
     _csrf: None = Depends(_verify_csrf),
 ):
-    data = await request.json()
+    data     = await request.json()
     cfg_file = get_config_file(request)
     _safe_config_path(cfg_file)
-
-    conf_text = build_unbound_conf(data)
-    if os.path.exists(cfg_file):
-        ts = datetime.now().strftime("%Y%m%d%H%M%S")
-        try: shutil.copy2(cfg_file, cfg_file + f".bak.{ts}")
-        except Exception: pass
-
-    proc = subprocess.run(["sudo", "tee", cfg_file],
-                          input=conf_text, capture_output=True, text=True)
-    if proc.returncode != 0:
-        raise HTTPException(500, detail=proc.stderr)
-
-    _, val_err, val_rc = run_cmd(["unbound-checkconf"])
-    if val_rc != 0:
-        raise HTTPException(422, detail=f"Config validation failed: {val_err}")
-
+    _write_config(cfg_file, _build_conf_text(cfg_file, data))
     out, err, rc = run_cmd(["systemctl", "reload-or-restart", "unbound"])
     return {
         "success": rc == 0,
-        "message": "Configuration saved and Unbound restarted" if rc == 0 else "Save OK but restart failed",
-        "error": err if rc != 0 else "",
+        "message": "Config saved and Unbound restarted" if rc == 0 else "Save OK, restart failed",
+        "error":   _clean_error("Restart failed", err) if rc != 0 else "",
     }
 
 
@@ -954,6 +1325,8 @@ async def api_config_apply(
 async def api_config_validate(_user: str = Depends(_login_required)):
     out, err, rc = run_cmd(["unbound-checkconf"])
     return {"valid": rc == 0, "output": out or err}
+
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1072,6 +1445,138 @@ async def api_ssl_regenerate(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+#  API — UNBOUND CONTROL CERTIFICATES
+#  Paths are loaded from .env (UNBOUND_SERVER_KEY etc.), never hardcoded here.
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.get("/api/unbound/certs/info")
+async def api_unbound_certs_info(_user: str = Depends(_login_required)):
+    files = {
+        "server_key": UNBOUND_SERVER_KEY,
+        "server_pem": UNBOUND_SERVER_PEM,
+        "control_key": UNBOUND_CONTROL_KEY,
+        "control_pem": UNBOUND_CONTROL_PEM,
+    }
+    return {
+        k: {"path": v, "exists": os.path.exists(v)}
+        for k, v in files.items()
+    }
+
+
+@app.post("/api/unbound/certs/delete")
+async def api_unbound_certs_delete(
+    _user: str = Depends(_login_required),
+    _csrf: None = Depends(_verify_csrf),
+):
+    deleted, errors = [], []
+    for path in (UNBOUND_SERVER_KEY, UNBOUND_SERVER_PEM,
+                 UNBOUND_CONTROL_KEY, UNBOUND_CONTROL_PEM):
+        if not path.startswith("/etc/unbound/"):
+            errors.append(f"Path outside /etc/unbound/ blocked: {path}")
+            continue
+        if os.path.exists(path):
+            out, err, rc = run_cmd(["sudo", "rm", "-f", path])
+            if rc == 0: deleted.append(path)
+            else:       errors.append(f"{path}: {err}")
+    if errors:
+        raise HTTPException(500, detail=_clean_error("Delete failed", "; ".join(errors)))
+    return {"success": True, "deleted": deleted}
+
+
+@app.post("/api/unbound/certs/regenerate")
+async def api_unbound_certs_regenerate(
+    _user: str = Depends(_login_required),
+    _csrf: None = Depends(_verify_csrf),
+):
+    out, err, rc = run_cmd(["sudo", "unbound-control-setup"], timeout=30)
+    if rc != 0:
+        raise HTTPException(500, detail=_clean_error("unbound-control-setup failed", err or out))
+    return {"success": True, "output": out or "Certificates regenerated successfully."}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  API — SUB-FILE TAB MANAGEMENT
+# ─────────────────────────────────────────────────────────────────────────────
+
+class SubfileTabsPayload(BaseModel):
+    file: str
+    allowed_tabs: List[str]
+    description: str = ""
+    move_existing: bool = False
+
+    @field_validator("file")
+    @classmethod
+    def validate_file(cls, v: str) -> str:
+        return _safe_config_path(v)
+
+    @field_validator("allowed_tabs")
+    @classmethod
+    def validate_tabs(cls, v: List[str]) -> List[str]:
+        return [t.strip() for t in v if t.strip() in ALL_TABS]
+
+    @field_validator("description")
+    @classmethod
+    def sanitize_desc(cls, v: str) -> str:
+        return re.sub(r'[\r\n]', ' ', v.strip())[:200]
+
+
+@app.post("/api/config/subfile/update_tabs")
+async def api_subfile_update_tabs(
+    request: Request,
+    payload: SubfileTabsPayload,
+    _user: str = Depends(_login_required),
+    _csrf: None = Depends(_verify_csrf),
+):
+    """Update # gui-allowed: and optionally move settings from main config into this sub-file."""
+    if payload.file == DEFAULT_CONFIG_FILE:
+        raise HTTPException(400, detail="Cannot set allowed tabs on the main config file.")
+    if not payload.allowed_tabs:
+        raise HTTPException(400, detail="Select at least one tab.")
+    if not os.path.exists(payload.file):
+        raise HTTPException(404, detail="Config file not found.")
+
+    # Read existing file, preserve non-header content
+    existing_content = Path(payload.file).read_text()
+    non_header_lines = []
+    for line in existing_content.splitlines():
+        if line.startswith("# gui-allowed:") or line.startswith("# gui-description:") \
+                or line.startswith("# Generated by"):
+            continue
+        non_header_lines.append(line)
+    # Strip leading blank lines from body
+    body = "\n".join(non_header_lines).lstrip("\n")
+
+    seed_data: Dict[str, Any] = {"forward_zones": [], "access_control": [],
+                                  "local_zones": [], "local_data": []}
+    if payload.move_existing:
+        mp = parse_unbound_conf(DEFAULT_CONFIG_FILE)
+        seed_data = {**mp.get("server", {}), "forward_zones": mp.get("forward_zones", []),
+                     "access_control": mp.get("access_control", []),
+                     "local_zones": mp.get("local_zones", []),
+                     "local_data": mp.get("local_data", [])}
+        # Build fresh file from seed
+        new_content = build_subfile_conf(seed_data, payload.allowed_tabs, payload.description)
+    else:
+        # Rewrite just the header, keep existing body
+        header_lines = [f"# gui-allowed: {','.join(payload.allowed_tabs)}"]
+        if payload.description:
+            header_lines.append(f"# gui-description: {_san(payload.description)}")
+        header_lines.append(f"# Generated by Unbound Web GUI — {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        new_content = "\n".join(header_lines) + "\n\n" + body
+
+    proc = subprocess.run(["sudo", "tee", payload.file],
+                          input=new_content, capture_output=True, text=True)
+    if proc.returncode != 0:
+        raise HTTPException(500, detail=_clean_error("Write failed", proc.stderr))
+    _, val_err, val_rc = run_cmd(["unbound-checkconf"])
+    if val_rc != 0:
+        raise HTTPException(422, detail=_clean_error("Config validation failed", val_err))
+    return {"success": True}
+
+
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 #  API — BACKUPS
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1156,8 +1661,33 @@ async def api_backup_download(
     return FileResponse(path, filename=safe, media_type="text/plain")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  ENTRY POINT
+@app.post("/api/backup/upload")
+async def api_backup_upload(
+    request: Request,
+    _user: str = Depends(_login_required),
+    _csrf: None = Depends(_verify_csrf),
+):
+    from fastapi import UploadFile, File as _File
+    form  = await request.form()
+    ufile = form.get("file")
+    if not ufile or not hasattr(ufile, "filename"):
+        raise HTTPException(400, detail="No file uploaded")
+    fname = os.path.basename(ufile.filename or "backup.conf")
+    fname = re.sub(r"[^a-zA-Z0-9_\-\.]", "_", fname)
+    if not fname.endswith(".conf"):
+        fname += ".conf"
+    dest  = os.path.join(BACKUP_DIR, fname)
+    content = await ufile.read()
+    if len(content) > 2_000_000:
+        raise HTTPException(413, detail="File too large (max 2 MB)")
+    # Validate it looks like an unbound config
+    text = content.decode("utf-8", errors="replace")
+    if "server:" not in text and "forward-zone:" not in text:
+        raise HTTPException(422, detail="File does not appear to be an Unbound config")
+    Path(dest).write_bytes(content)
+    return {"success": True, "filename": fname}
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 def run_http_redirect(http_port: int, https_port: int):
@@ -1185,34 +1715,35 @@ def run_http_redirect(http_port: int, https_port: int):
 
 
 if __name__ == "__main__":
-    import ssl as _ssl
+    # HTTPS_ENABLED / HTTP_PORT / HTTPS_PORT are loaded from .env at module level.
+    # Set HTTPS_ENABLED=false in .env when running behind nginx/caddy (TLS termination
+    # at the proxy — app serves plain HTTP internally).
 
-    HTTP_PORT  = 8080
-    HTTPS_PORT = 8443
-
-    try:
-        from ssl_utils import ensure_ssl_cert
-        cert_file, key_file = ensure_ssl_cert()
-
-        # Enable Secure cookie flag for HTTPS
-        for m in app.user_middleware:
-            if hasattr(m, "kwargs") and "https_only" in (m.kwargs or {}):
-                m.kwargs["https_only"] = True
-
-        run_http_redirect(HTTP_PORT, HTTPS_PORT)
-        print(f"[app] HTTPS on https://0.0.0.0:{HTTPS_PORT}")
-
-        uvicorn.run(
-            "app:app",
-            host="0.0.0.0",
-            port=HTTPS_PORT,
-            ssl_keyfile=key_file,
-            ssl_certfile=cert_file,
-            log_level="warning",
-            access_log=False,
-        )
-    except RuntimeError as e:
-        print(f"\n[ssl] WARNING: {e}")
-        print("[ssl] Falling back to plain HTTP on port 8080.\n")
+    if not HTTPS_ENABLED:
+        print(f"[app] HTTPS_ENABLED=false — running plain HTTP on port {HTTP_PORT}")
+        print("[app] TLS must be handled by your reverse proxy (nginx, caddy, etc.)")
         uvicorn.run("app:app", host="0.0.0.0", port=HTTP_PORT,
                     log_level="warning", access_log=False)
+    else:
+        try:
+            from ssl_utils import ensure_ssl_cert
+            cert_file, key_file = ensure_ssl_cert()
+
+            run_http_redirect(HTTP_PORT, HTTPS_PORT)
+            print(f"[app] HTTPS on https://0.0.0.0:{HTTPS_PORT}")
+            print(f"[app] HTTP redirect on http://0.0.0.0:{HTTP_PORT}")
+
+            uvicorn.run(
+                "app:app",
+                host="0.0.0.0",
+                port=HTTPS_PORT,
+                ssl_keyfile=key_file,
+                ssl_certfile=cert_file,
+                log_level="warning",
+                access_log=False,
+            )
+        except RuntimeError as e:
+            print(f"\n[ssl] WARNING: {e}")
+            print("[ssl] Falling back to plain HTTP on port 8080.\n")
+            uvicorn.run("app:app", host="0.0.0.0", port=HTTP_PORT,
+                        log_level="warning", access_log=False)

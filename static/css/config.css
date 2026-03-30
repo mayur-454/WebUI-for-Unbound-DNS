@@ -1,0 +1,299 @@
+/*
+ * config.css — Config page specific styles
+ * Extends style.css — uses the same CSS custom properties, never redefines them.
+ * All colours reference the variables declared in style.css :root {}.
+ */
+
+/* ── ACTIVE CONFIG FILE CARD ─────────────────────────────────────────────── */
+
+.cfg-file-card {
+    margin-bottom: 14px;
+}
+
+/* Card body turned into a flex row for the file selector + badge strip */
+.cfg-file-card-body {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 14px 16px;
+}
+
+/* Constrains the <select> so it doesn't stretch full-width */
+#file-selector {
+    max-width: 480px;
+}
+
+/* Small strip of allowed-tab badges shown for sub-config files */
+.cfg-file-allowed-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* Italic description text next to the allowed-tabs badges */
+.cfg-file-desc {
+    font-style: italic;
+}
+
+/* ── BADGE SIZE VARIANTS ─────────────────────────────────────────────────── */
+
+/*
+ * .badge-xs — tiny badge used for tab names inside the file card and the
+ *             include-row meta strip. Smaller than the default .badge.
+ */
+.badge-xs {
+    font-size: 10px;
+    padding: 1px 7px;
+}
+
+/* ── FORWARD ZONE ENTRIES ────────────────────────────────────────────────── */
+
+/*
+ * .fwd-zone-entry — each forward zone block rendered as a sub-card.
+ * Extends .card (defined in style.css) with a lighter border and spacing.
+ */
+.fwd-zone-entry {
+    margin-bottom: 12px;
+    border-color: var(--border-light);
+}
+
+/* Tighter padding inside a forward zone sub-card */
+.fwd-zone-body {
+    padding: 12px;
+}
+
+/*
+ * .fwd-zone-row — like .form-row but without a bottom border and with
+ *                 reduced vertical padding, used inside fwd-zone-entry.
+ */
+.fwd-zone-row {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 10px;
+    align-items: start;
+    border: none;
+    padding: 4px 0;
+}
+
+/* Right-align the "Remove Zone" button at the bottom of each zone block */
+.fwd-zone-actions {
+    text-align: right;
+    margin-top: 6px;
+}
+
+/* ── FORM SECTION TITLE VARIANTS ─────────────────────────────────────────── */
+
+/*
+ * .form-section-title-spaced — used when a section title needs extra top
+ *                              margin to separate it from content above.
+ */
+.form-section-title-spaced {
+    margin-top: 20px;
+}
+
+/*
+ * .section-hint — small de-emphasised note inline with a section title,
+ *                 e.g. "(use k/m/g suffixes)" in the Performance tab.
+ */
+.section-hint {
+    font-weight: 400;
+    color: var(--text-muted);
+    font-size: 11px;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+/* ── INCLUDE LIST  (UI Preferences tab) ─────────────────────────────────── */
+
+/*
+ * #include-list — vertical flex container holding all .include-row entries.
+ */
+#include-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+/*
+ * .include-row — one draggable row representing a conf.d include file.
+ * Background intentionally darker than cards to differentiate the list.
+ */
+.include-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--bg-dark);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: grab;
+    transition:
+        border-color 0.15s,
+        background 0.15s;
+    user-select: none;
+}
+
+.include-row:hover {
+    border-color: var(--border-light);
+    background: var(--bg-panel);
+}
+
+.include-row:active {
+    cursor: grabbing;
+}
+
+/* The drag-handle icon on the left of each row */
+.include-drag-handle {
+    flex-shrink: 0;
+    cursor: grab;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+}
+
+/* Text/badge info section — fills remaining space, clips overflow */
+.include-row-info {
+    flex: 1;
+    min-width: 0;
+}
+
+/* File path displayed in monospace, truncated with ellipsis if too long */
+.include-row-path {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Row of small badges / description text below the path */
+.include-row-meta {
+    margin-top: 3px;
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* Italic description label within the meta strip */
+.include-meta-desc {
+    font-style: italic;
+}
+
+/* Placeholder shown when the include list is empty */
+.include-row-empty {
+    padding: 12px 0;
+}
+
+/* ── RAW EDITOR MODAL ────────────────────────────────────────────────────── */
+
+/* Makes the raw editor modal wider than the default 500 px modal-box */
+.modal-raw-box {
+    max-width: 800px;
+    width: 95%;
+}
+
+/* Filename label shown next to the modal title */
+.raw-filename-label {
+    color: var(--text-dim);
+    font-size: 14px;
+    font-family: var(--mono);
+}
+
+/* Give the raw <textarea> enough height to be comfortable */
+#raw-editor {
+    min-height: 420px;
+}
+
+/* ── ALERT SPACING HELPERS ───────────────────────────────────────────────── */
+
+/*
+ * .alert-mb  — standard bottom margin for .alert blocks that are followed
+ *              by form content and need breathing room.
+ */
+.alert-mb {
+    margin-bottom: 14px;
+}
+
+/*
+ * .alert-mb-sm — slightly smaller bottom margin for tighter contexts
+ *                (e.g. between two form sub-sections).
+ */
+.alert-mb-sm {
+    margin-bottom: 10px;
+}
+
+/* ── TAB LOCKED STATE ────────────────────────────────────────────────────── */
+
+/*
+ * .tab-btn--locked — visual treatment for a tab button whose tab is not
+ *                    allowed by the current sub-config file's gui-allowed list.
+ *                    Applied by applyTabLocking() in config.html JS.
+ */
+.tab-btn--locked {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.tab-btn--locked:hover {
+    background: transparent;
+    color: var(--text-muted);
+    border-color: transparent;
+}
+
+/*
+ * .tab-pane--locked — the content pane matching a locked tab.
+ *                     Inputs inside are disabled via JS; this adds a subtle
+ *                     visual cue so the user knows why things are greyed out.
+ */
+.tab-pane--locked {
+    position: relative;
+}
+
+.tab-pane--locked::after {
+    content: "Read-only \2014  not allowed for this config file";
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 3px 10px;
+    border-radius: 3px;
+    pointer-events: none;
+}
+
+/* ── RESPONSIVE TWEAKS ───────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+    .fwd-zone-row {
+        grid-template-columns: 1fr;
+    }
+
+    .cfg-file-card-body {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    #file-selector {
+        max-width: 100%;
+        width: 100%;
+    }
+}
+
+@media (max-width: 700px) {
+    .include-row-path {
+        font-size: 11px;
+    }
+
+    .modal-raw-box {
+        width: 100%;
+        border-radius: 0;
+    }
+}

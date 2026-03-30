@@ -24,16 +24,16 @@
     --text-dim: #b0b0b0;
     --text-muted: #666666;
 
-    --mono: 'Share Tech Mono', 'Courier New', monospace;
-    --sans: 'Exo 2', 'Rajdhani', sans-serif;
-    --heading: 'Rajdhani', 'Exo 2', sans-serif;
+    --mono: "Share Tech Mono", "Courier New", monospace;
+    --sans: "Exo 2", "Rajdhani", sans-serif;
+    --heading: "Rajdhani", "Exo 2", sans-serif;
 }
 
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    overflow-x: auto;
+    /* overflow-x: auto; */
 }
 
 body {
@@ -261,7 +261,6 @@ body {
     padding: 20px;
     overflow-x: hidden;
 
-
     /* max-width: 1024px; */
     max-width: clamp(320px, 90%, 1200px);
     margin: 0 auto;
@@ -364,7 +363,7 @@ body {
 }
 
 .stat-tile::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
@@ -612,7 +611,7 @@ select.form-control option {
 }
 
 .toggle-slider:before {
-    content: '';
+    content: "";
     position: absolute;
     height: 14px;
     width: 14px;
@@ -721,21 +720,22 @@ select.form-control option {
 .btn-group {
     display: flex;
     gap: 8px;
-    flex-wrap: wrap;
     align-items: center;
+    justify-content: flex-end;
 }
 
 /* ── STICKY APPLY BAR ── */
 .apply-bar {
     position: sticky;
     bottom: 0;
-    background: linear-gradient(0deg, var(--bg-dark) 80%, transparent);
+    /* background: linear-gradient(0deg, var(--bg-dark) 80%, transparent); */
     padding: 16px 0 6px;
     display: flex;
     align-items: center;
     gap: 12px;
     z-index: 100;
     margin-top: 20px;
+    justify-content: flex-end;
 }
 
 .apply-bar .msg {
@@ -811,7 +811,6 @@ select.form-control option {
     background: var(--border-light);
     border-radius: 3px;
 }
-
 
 /* ── BADGES ── */
 .badge {
@@ -971,10 +970,10 @@ select.form-control option {
     background: var(--bg-card);
     border: 1px solid var(--border-light);
     border-radius: 8px;
-    padding: 24px;
     max-width: 500px;
     width: 90%;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    overflow: auto;
 }
 
 .modal-title {
@@ -982,7 +981,8 @@ select.form-control option {
     font-size: 18px;
     font-weight: 700;
     color: var(--accent);
-    margin-bottom: 16px;
+    padding: 10px 16px;
+    background: linear-gradient(90deg, var(--bg-card2), var(--bg-card));
 }
 
 /* ── SCROLLBAR ── */
@@ -1118,6 +1118,7 @@ select.form-control option {
 
 .flex {
     display: flex;
+    margin-left: auto;
 }
 
 .flex-center {
@@ -1158,4 +1159,147 @@ select.form-control option {
     .form-row {
         grid-template-columns: 1fr;
     }
+}
+
+/* Toast Notifications */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+}
+
+.toast {
+    padding: 12px 20px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    animation: slideIn 0.3s ease;
+}
+
+.toast-success {
+    background: #28a745;
+}
+
+.toast-error {
+    background: #dc3545;
+}
+
+.toast-warning {
+    background: #ffc107;
+    color: #333;
+}
+
+.toast-info {
+    background: #17a2b8;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Tab Styling */
+
+.tab-btn.tab-disabled {
+    background: #e9ecef;
+    color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.tab-content {
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-top: none;
+    background: white;
+}
+
+/* Result Boxes */
+.result-box {
+    padding: 15px;
+    margin-top: 10px;
+    border-radius: 4px;
+}
+
+.result-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.result-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding: 10px;
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 12px;
+    border-radius: 3px;
+    margin-left: 5px;
+}
+
+.badge-primary {
+    background: #007bff;
+    color: white;
+}
+
+.badge-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.badge-success {
+    background: #28a745;
+    color: white;
+}
+
+.badge-danger {
+    background: #dc3545;
+    color: white;
 }

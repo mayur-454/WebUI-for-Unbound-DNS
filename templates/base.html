@@ -1,300 +1,551 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="csrf-token" content="{{ csrf_token }}">
-  <title>Unbound DNS Manager</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <link rel="icon" href="{{ url_for('static', filename='unbound.svg')}}" type="image/svg+xml">
-</head>
-<body>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="csrf-token" content="{{ csrf_token }}" />
+        <title>Unbound DNS Manager</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', filename='css/style.css') }}"
+        />
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', filename='css/config.css') }}"
+        />
+        <link
+            rel="icon"
+            href="{{ url_for('static', filename='unbound.svg')}}"
+            type="image/svg+xml"
+        />
+    </head>
+    <body>
+        <!-- TOPBAR -->
+        <div class="topbar">
+            <a href="/" class="topbar-logo">
+                <img
+                    src="{{ url_for('static', filename='unbound.svg')}}"
+                    alt="unbound dns logo"
+                />
+            </a>
+            <span class="topbar-title">UNBOUND <span>DNS</span></span>
+            <div class="topbar-sep"></div>
+            <span class="topbar-hostname"
+                >HOST: <b id="tb-hostname">loading&#8230;</b></span
+            >
+            <div class="topbar-right">
+                <span class="topbar-clock" id="topbar-clock">--:--:--</span>
+                <div class="status-pill" id="tb-status-pill">
+                    <div class="status-dot"></div>
+                    <span id="tb-status-text">checking&#8230;</span>
+                </div>
+            </div>
+        </div>
 
-  <!-- TOPBAR -->
-  <div class="topbar">
-    <a href="/" class="topbar-logo">
-      <img src="{{ url_for('static', filename='unbound.svg')}}" alt="unbound dns logo">
-    </a>
-    <span class="topbar-title">UNBOUND <span>DNS</span></span>
-    <div class="topbar-sep"></div>
-    <span class="topbar-hostname">HOST: <b id="tb-hostname">loading&#8230;</b></span>
-    <div class="topbar-right">
-      <span class="topbar-clock" id="topbar-clock">--:--:--</span>
-      <div class="status-pill" id="tb-status-pill">
-        <div class="status-dot"></div>
-        <span id="tb-status-text">checking&#8230;</span>
-      </div>
-    </div>
-  </div>
+        <div class="layout">
+            <nav class="sidebar">
+                <div class="sidebar-section">Navigation</div>
+                <a
+                    href="/"
+                    class="sidebar-item {% if active_tab=='home' %}active{% endif %}"
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <path
+                            d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                        />
+                        <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                    Home
+                </a>
+                <a
+                    href="/config"
+                    class="sidebar-item {% if active_tab=='config' %}active{% endif %}"
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <path
+                            d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"
+                        />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                        <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                    Config
+                </a>
+                <a
+                    href="/debug"
+                    class="sidebar-item {% if active_tab=='debug' %}active{% endif %}"
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <path
+                            d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"
+                        />
+                        <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                    Debug
+                </a>
+                <a
+                    href="/settings"
+                    class="sidebar-item {% if active_tab=='settings' %}active{% endif %}"
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"
+                        />
+                    </svg>
+                    Settings
+                </a>
+                <div class="sidebar-divider"></div>
+                <div style="padding: 6px 20px 4px">
+                    <div class="text-xs text-muted" style="margin-bottom: 2px">
+                        CONFIG FILE
+                    </div>
+                    <div
+                        id="sb-cfgfile"
+                        class="text-xs text-mono text-dim"
+                        style="word-break: break-all"
+                    >
+                        &#8212;
+                    </div>
+                </div>
+                <div style="padding: 6px 20px 4px">
+                    <div class="text-xs text-muted" style="margin-bottom: 2px">
+                        SIGNED IN AS
+                    </div>
+                    <div
+                        class="text-xs"
+                        style="color: var(--accent); font-family: monospace"
+                    >
+                        {{ session.get('username','&#8212;') }}
+                    </div>
+                </div>
+                <div class="sidebar-divider"></div>
+                <a
+                    href="/logout"
+                    class="sidebar-item"
+                    style="color: var(--text-muted); margin-top: 2px"
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                    Logout
+                </a>
+            </nav>
+            <main class="main">{% block content %}{% endblock %}</main>
+        </div>
 
-  <div class="layout">
-    <nav class="sidebar">
-      <div class="sidebar-section">Navigation</div>
-      <a href="/" class="sidebar-item {% if active_tab=='home' %}active{% endif %}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        Home
-      </a>
-      <a href="/config" class="sidebar-item {% if active_tab=='config' %}active{% endif %}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        Config
-      </a>
-      <a href="/debug" class="sidebar-item {% if active_tab=='debug' %}active{% endif %}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        Debug
-      </a>
-      <a href="/settings" class="sidebar-item {% if active_tab=='settings' %}active{% endif %}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-        Settings
-      </a>
-      <div class="sidebar-divider"></div>
-      <div style="padding:6px 20px 4px;">
-        <div class="text-xs text-muted" style="margin-bottom:2px;">CONFIG FILE</div>
-        <div id="sb-cfgfile" class="text-xs text-mono text-dim" style="word-break:break-all;">&#8212;</div>
-      </div>
-      <div style="padding:6px 20px 4px;">
-        <div class="text-xs text-muted" style="margin-bottom:2px;">SIGNED IN AS</div>
-        <div class="text-xs" style="color:var(--accent);font-family:monospace;">{{ session.get('username','&#8212;') }}</div>
-      </div>
-      <div class="sidebar-divider"></div>
-      <a href="/logout" class="sidebar-item" style="color:var(--text-muted);margin-top:2px;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        Logout
-      </a>
-    </nav>
-    <main class="main">
-      {% block content %}{% endblock %}
-    </main>
-  </div>
+        <div id="toast-container"></div>
 
-  <div id="toast-container"></div>
+        <script>
+            const _csrfToken =
+                document.querySelector('meta[name="csrf-token"]')?.content ||
+                "";
 
-  <script>
-    const _csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            // Polling handles — cleared on forced logout so no more requests are sent
+            let _statsInterval = null;
+            let _clockInterval = null;
+            let _sessionExpired = false;
 
-    // Polling handles — cleared on forced logout so no more requests are sent
-    let _statsInterval  = null;
-    let _clockInterval  = null;
-    let _sessionExpired = false;
+            function _stopAllPolling() {
+                clearInterval(_statsInterval);
+                clearInterval(_clockInterval);
+                _statsInterval = null;
+                _clockInterval = null;
+            }
 
-    function _stopAllPolling() {
-      clearInterval(_statsInterval);
-      clearInterval(_clockInterval);
-      _statsInterval = null;
-      _clockInterval = null;
-    }
+            // Called once when we detect the session has been invalidated (second
+            // browser logged in). Sends a single /logout to clean up server state,
+            // stops ALL intervals, then redirects to /login exactly once.
+            function _handleSessionExpiry() {
+                if (_sessionExpired) return;
+                _sessionExpired = true;
+                _stopAllPolling();
+                fetch("/logout", { redirect: "manual" }).catch(() => {});
+                setTimeout(() => {
+                    window.location.href = "/login";
+                }, 300);
+            }
 
-    // Called once when we detect the session has been invalidated (second
-    // browser logged in). Sends a single /logout to clean up server state,
-    // stops ALL intervals, then redirects to /login exactly once.
-    function _handleSessionExpiry() {
-      if (_sessionExpired) return;
-      _sessionExpired = true;
-      _stopAllPolling();
-      fetch('/logout', { redirect: 'manual' }).catch(() => {});
-      setTimeout(() => { window.location.href = '/login'; }, 300);
-    }
+            function toast(msg, type, duration) {
+                type = type || "info";
+                duration = duration || 4000;
+                var icons = {
+                    success: "&#10003;",
+                    error: "&#10007;",
+                    info: "&#9432;",
+                    warning: "&#9888;",
+                };
+                var t = document.createElement("div");
+                t.className = "toast " + type;
+                var i = document.createElement("span");
+                i.innerHTML = icons[type] || "&#9432;";
+                var m = document.createElement("span");
+                m.textContent = msg;
+                t.appendChild(i);
+                t.appendChild(m);
+                document.getElementById("toast-container").appendChild(t);
+                var paused = false;
+                var dismiss = function () {
+                    t.style.opacity = "0";
+                    t.style.transform = "translateX(100%)";
+                    t.style.transition = "0.3s";
+                    setTimeout(function () {
+                        t.remove();
+                    }, 300);
+                };
+                t.addEventListener("mouseenter", function () {
+                    paused = true;
+                });
+                t.addEventListener("mouseleave", function () {
+                    paused = false;
+                    setTimeout(function () {
+                        if (!paused) dismiss();
+                    }, 800);
+                });
+                setTimeout(function () {
+                    if (!paused) dismiss();
+                }, duration);
+            }
 
-    function toast(msg, type, duration) {
-      type = type || 'info'; duration = duration || 4000;
-      var icons = { success: '&#10003;', error: '&#10007;', info: '&#9432;', warning: '&#9888;' };
-      var t = document.createElement('div');
-      t.className = 'toast ' + type;
-      var i = document.createElement('span'); i.innerHTML = icons[type] || '&#9432;';
-      var m = document.createElement('span'); m.textContent = msg;
-      t.appendChild(i); t.appendChild(m);
-      document.getElementById('toast-container').appendChild(t);
-      var paused = false;
-      var dismiss = function() {
-        t.style.opacity = '0'; t.style.transform = 'translateX(100%)';
-        t.style.transition = '0.3s'; setTimeout(function(){ t.remove(); }, 300);
-      };
-      t.addEventListener('mouseenter', function(){ paused = true; });
-      t.addEventListener('mouseleave', function(){ paused = false; setTimeout(function(){ if(!paused) dismiss(); }, 800); });
-      setTimeout(function(){ if(!paused) dismiss(); }, duration);
-    }
+            async function apiPost(url, data) {
+                try {
+                    var r = await fetch(url, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-Token": _csrfToken,
+                            "X-Requested-With": "XMLHttpRequest",
+                        },
+                        redirect: "manual",
+                        body: JSON.stringify(data),
+                    });
+                    if (
+                        r.type === "opaqueredirect" ||
+                        r.status === 307 ||
+                        r.status === 302 ||
+                        r.status === 403
+                    ) {
+                        _handleSessionExpiry();
+                        return {};
+                    }
+                    var json = await r.json();
+                    if (json.detail && !json.success)
+                        return {
+                            success: false,
+                            error:
+                                typeof json.detail === "string"
+                                    ? json.detail
+                                    : JSON.stringify(json.detail),
+                        };
+                    return json;
+                } catch (e) {
+                    return { success: false, error: String(e) };
+                }
+            }
 
-    async function apiPost(url, data) {
-      try {
-        var r = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': _csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
-          redirect: 'manual',
-          body: JSON.stringify(data)
-        });
-        if (r.type === 'opaqueredirect' || r.status === 307 || r.status === 302 || r.status === 403) {
-          _handleSessionExpiry(); return {};
-        }
-        var json = await r.json();
-        if (json.detail && !json.success)
-          return { success: false, error: typeof json.detail === 'string' ? json.detail : JSON.stringify(json.detail) };
-        return json;
-      } catch(e) { return { success: false, error: String(e) }; }
-    }
+            async function svcAction(action) {
+                toast("Sending " + action + " to unbound\u2026", "info");
+                var data = await apiPost("/api/service/" + action, {});
+                if (data.success) {
+                    toast("Unbound " + action + " successful", "success");
+                    setTimeout(function () {
+                        updateUnboundStatus(false);
+                    }, 1200);
+                    setTimeout(function () {
+                        location.reload();
+                    }, 2500);
+                } else {
+                    toast(
+                        "Failed: " + (data.error || "unknown error"),
+                        "error",
+                        6000,
+                    );
+                }
+            }
 
-    async function svcAction(action) {
-      toast('Sending ' + action + ' to unbound\u2026', 'info');
-      var data = await apiPost('/api/service/' + action, {});
-      if (data.success) {
-        toast('Unbound ' + action + ' successful', 'success');
-        setTimeout(function(){ updateUnboundStatus(false); }, 1200);
-        setTimeout(function(){ location.reload(); }, 2500);
-      } else {
-        toast('Failed: ' + (data.error || 'unknown error'), 'error', 6000);
-      }
-    }
+            function _setText(id, value) {
+                var el = document.getElementById(id);
+                if (el) el.textContent = value;
+            }
 
-    function _setText(id, value) {
-      var el = document.getElementById(id);
-      if (el) el.textContent = value;
-    }
+            // THE SINGLE POLLING FUNCTION
+            // Uses redirect:'manual' — if session is gone (second browser logged in)
+            // the response is an opaque redirect. We detect that, stop ALL intervals,
+            // and redirect to /login exactly once. No more infinite request loops.
+            async function updateUnboundStatus(showToast) {
+                if (_sessionExpired) return;
+                try {
+                    var r = await fetch("/api/stats", {
+                        headers: { "X-Requested-With": "XMLHttpRequest" },
+                        redirect: "manual",
+                    });
 
-    // THE SINGLE POLLING FUNCTION
-    // Uses redirect:'manual' — if session is gone (second browser logged in)
-    // the response is an opaque redirect. We detect that, stop ALL intervals,
-    // and redirect to /login exactly once. No more infinite request loops.
-    async function updateUnboundStatus(showToast) {
-      if (_sessionExpired) return;
-      try {
-        var r = await fetch('/api/stats', {
-          headers: { 'X-Requested-With': 'XMLHttpRequest' },
-          redirect: 'manual'
-        });
+                    if (
+                        r.type === "opaqueredirect" ||
+                        r.status === 307 ||
+                        r.status === 302 ||
+                        r.status === 403
+                    ) {
+                        _handleSessionExpiry();
+                        return;
+                    }
+                    if (!r.ok) return;
 
-        if (r.type === 'opaqueredirect' || r.status === 307 || r.status === 302 || r.status === 403) {
-          _handleSessionExpiry(); return;
-        }
-        if (!r.ok) return;
+                    var d = await r.json();
+                    var running = d.active;
 
-        var d = await r.json();
-        var running = d.active;
+                    // Topbar
+                    var pill = document.getElementById("tb-status-pill");
+                    var txt = document.getElementById("tb-status-text");
+                    if (pill)
+                        pill.className =
+                            "status-pill " + (running ? "up" : "down");
+                    if (txt) txt.textContent = running ? "RUNNING" : "STOPPED";
 
-        // Topbar
-        var pill = document.getElementById('tb-status-pill');
-        var txt  = document.getElementById('tb-status-text');
-        if (pill) pill.className = 'status-pill ' + (running ? 'up' : 'down');
-        if (txt)  txt.textContent = running ? 'RUNNING' : 'STOPPED';
+                    // Home service badge
+                    var svcBadge = document.getElementById("svc-badge");
+                    if (svcBadge) {
+                        svcBadge.className =
+                            "badge " + (running ? "badge-green" : "badge-red");
+                        svcBadge.textContent = running ? "RUNNING" : "STOPPED";
+                    }
 
-        // Home service badge
-        var svcBadge = document.getElementById('svc-badge');
-        if (svcBadge) { svcBadge.className = 'badge ' + (running ? 'badge-green' : 'badge-red'); svcBadge.textContent = running ? 'RUNNING' : 'STOPPED'; }
+                    // Settings service badge
+                    var svcSet = document.getElementById("svc-badge-settings");
+                    if (svcSet) {
+                        svcSet.className =
+                            "badge " + (running ? "badge-green" : "badge-red");
+                        svcSet.textContent = running ? "running" : "stopped";
+                    }
 
-        // Settings service badge
-        var svcSet = document.getElementById('svc-badge-settings');
-        if (svcSet) { svcSet.className = 'badge ' + (running ? 'badge-green' : 'badge-red'); svcSet.textContent = running ? 'running' : 'stopped'; }
+                    // Top stat tiles
+                    _setText(
+                        "st-queries",
+                        Number(d.total_queries).toLocaleString(),
+                    );
+                    _setText("st-hitrate", d.cache_hit_pct + "%");
+                    _setText(
+                        "st-hits",
+                        "Hits: " +
+                            Number(d.cache_hits).toLocaleString() +
+                            " / Misses: " +
+                            Number(d.cache_misses).toLocaleString(),
+                    );
+                    // toFixed(2) to preserve two decimal places, matching the server-rendered template
+                    _setText(
+                        "st-recur",
+                        parseFloat(d.recursion_avg).toFixed(2) + " ms",
+                    );
 
-        // Top stat tiles
-        _setText('st-queries', Number(d.total_queries).toLocaleString());
-        _setText('st-hitrate', d.cache_hit_pct + '%');
-        _setText('st-hits',    'Hits: ' + Number(d.cache_hits).toLocaleString() + ' / Misses: ' + Number(d.cache_misses).toLocaleString());
-        // toFixed(2) to preserve two decimal places, matching the server-rendered template
-        _setText('st-recur',   parseFloat(d.recursion_avg).toFixed(2) + ' ms');
+                    // Status tile text+colour
+                    var statusEl = document.getElementById("st-status");
+                    if (statusEl) {
+                        statusEl.textContent = running
+                            ? "\u25CF RUNNING"
+                            : "\u25CF STOPPED";
+                        statusEl.className =
+                            "stat-value " + (running ? "green" : "red");
+                        statusEl.style.fontSize = "18px";
+                    }
 
-        // Status tile text+colour
-        var statusEl = document.getElementById('st-status');
-        if (statusEl) {
-          statusEl.textContent = running ? '\u25CF RUNNING' : '\u25CF STOPPED';
-          statusEl.className   = 'stat-value ' + (running ? 'green' : 'red');
-          statusEl.style.fontSize = '18px';
-        }
+                    // PID + Autostart sub-line — FIX: keep both fields, not just autostart
+                    var enabledSub = document.getElementById("st-enabled-sub");
+                    if (enabledSub) {
+                        var pid = d.pid && d.pid !== "0" ? d.pid : "\u2014";
+                        enabledSub.textContent =
+                            "PID: " +
+                            pid +
+                            " \u00B7 Auto-start " +
+                            (d.enabled ? "ON" : "OFF");
+                    }
 
-        // PID + Autostart sub-line — FIX: keep both fields, not just autostart
-        var enabledSub = document.getElementById('st-enabled-sub');
-        if (enabledSub) {
-          var pid = (d.pid && d.pid !== '0') ? d.pid : '\u2014';
-          enabledSub.textContent = 'PID: ' + pid + ' \u00B7 Auto-start ' + (d.enabled ? 'ON' : 'OFF');
-        }
+                    // Autostart button label
+                    var autostartBtn = document.getElementById("autostart-btn");
+                    if (autostartBtn) {
+                        var svgEl = autostartBtn.querySelector("svg");
+                        autostartBtn.textContent =
+                            (d.enabled ? "Disable" : "Enable") + " Autostart";
+                        if (svgEl) autostartBtn.prepend(svgEl);
+                    }
 
-        // Autostart button label
-        var autostartBtn = document.getElementById('autostart-btn');
-        if (autostartBtn) {
-          var svgEl = autostartBtn.querySelector('svg');
-          autostartBtn.textContent = (d.enabled ? 'Disable' : 'Enable') + ' Autostart';
-          if (svgEl) autostartBtn.prepend(svgEl);
-        }
+                    // Enabled badge in info table
+                    var enabledBadge = document.getElementById("enabled-badge");
+                    if (enabledBadge) {
+                        enabledBadge.className =
+                            "badge " +
+                            (d.enabled ? "badge-green" : "badge-gray");
+                        enabledBadge.textContent = d.enabled
+                            ? "enabled"
+                            : "disabled";
+                    }
 
-        // Enabled badge in info table
-        var enabledBadge = document.getElementById('enabled-badge');
-        if (enabledBadge) {
-          enabledBadge.className   = 'badge ' + (d.enabled ? 'badge-green' : 'badge-gray');
-          enabledBadge.textContent = d.enabled ? 'enabled' : 'disabled';
-        }
+                    // Cache stat tiles
+                    _setText(
+                        "st-rrset",
+                        Number(d.rrset_cache_count).toLocaleString(),
+                    );
+                    _setText(
+                        "st-msg",
+                        Number(d.msg_cache_count).toLocaleString(),
+                    );
+                    _setText(
+                        "st-infra",
+                        Number(d.infra_cache).toLocaleString(),
+                    );
+                    _setText("st-key", Number(d.key_cache).toLocaleString());
+                    _setText(
+                        "st-unwanted-replies",
+                        Number(d.unwanted_replies).toLocaleString(),
+                    );
+                    _setText(
+                        "st-unwanted-queries",
+                        Number(d.unwanted_queries).toLocaleString(),
+                    );
 
-        // Cache stat tiles
-        _setText('st-rrset',            Number(d.rrset_cache_count).toLocaleString());
-        _setText('st-msg',              Number(d.msg_cache_count).toLocaleString());
-        _setText('st-infra',            Number(d.infra_cache).toLocaleString());
-        _setText('st-key',              Number(d.key_cache).toLocaleString());
-        _setText('st-unwanted-replies', Number(d.unwanted_replies).toLocaleString());
-        _setText('st-unwanted-queries', Number(d.unwanted_queries).toLocaleString());
+                    // Detailed stats table
+                    var table = document.getElementById("stats-table");
+                    if (
+                        table &&
+                        d.full_stats &&
+                        Object.keys(d.full_stats).length > 0
+                    ) {
+                        table.innerHTML = Object.entries(d.full_stats)
+                            .slice(0, 30)
+                            .map(function (e) {
+                                var k = String(e[0])
+                                    .replace(/&/g, "&amp;")
+                                    .replace(/</g, "&lt;");
+                                var v = String(e[1])
+                                    .replace(/&/g, "&amp;")
+                                    .replace(/</g, "&lt;");
+                                return (
+                                    "<tr><td>" +
+                                    k +
+                                    "</td><td>" +
+                                    v +
+                                    "</td></tr>"
+                                );
+                            })
+                            .join("");
+                    } else if (table && d.stats_error) {
+                        var errSafe = String(d.stats_error)
+                            .replace(/&/g, "&amp;")
+                            .replace(/</g, "&lt;");
+                        table.innerHTML =
+                            '<tr><td colspan="2" class="text-muted">' +
+                            errSafe +
+                            "</td></tr>";
+                    }
 
-        // Detailed stats table
-        var table = document.getElementById('stats-table');
-        if (table && d.full_stats && Object.keys(d.full_stats).length > 0) {
-          table.innerHTML = Object.entries(d.full_stats).slice(0, 30).map(function(e) {
-            var k = String(e[0]).replace(/&/g,'&amp;').replace(/</g,'&lt;');
-            var v = String(e[1]).replace(/&/g,'&amp;').replace(/</g,'&lt;');
-            return '<tr><td>' + k + '</td><td>' + v + '</td></tr>';
-          }).join('');
-        } else if (table && d.stats_error) {
-          var errSafe = String(d.stats_error).replace(/&/g,'&amp;').replace(/</g,'&lt;');
-          table.innerHTML = '<tr><td colspan="2" class="text-muted">' + errSafe + '</td></tr>';
-        }
+                    if (showToast) toast("Stats refreshed", "success");
+                } catch (e) {
+                    var pill2 = document.getElementById("tb-status-pill");
+                    var txt2 = document.getElementById("tb-status-text");
+                    if (pill2) pill2.className = "status-pill unknown";
+                    if (txt2) txt2.textContent = "UNKNOWN";
+                }
+            }
 
-        if (showToast) toast('Stats refreshed', 'success');
+            // Public alias for the Refresh button on home/settings pages
+            async function refreshStats() {
+                toast("Refreshing statistics\u2026", "info");
+                await updateUnboundStatus(true);
+            }
 
-      } catch(e) {
-        var pill2 = document.getElementById('tb-status-pill');
-        var txt2  = document.getElementById('tb-status-text');
-        if (pill2) pill2.className = 'status-pill unknown';
-        if (txt2)  txt2.textContent = 'UNKNOWN';
-      }
-    }
+            async function updateHostname() {
+                try {
+                    var r = await fetch("/api/sysinfo", {
+                        headers: { "X-Requested-With": "XMLHttpRequest" },
+                        redirect: "manual",
+                    });
+                    if (r.type === "opaqueredirect") {
+                        _handleSessionExpiry();
+                        return;
+                    }
+                    var json = await r.json();
+                    _setText("tb-hostname", json.hostname || "\u2014");
+                    var cf = document.getElementById("sb-cfgfile");
+                    if (cf) {
+                        var files = await fetch("/api/config/files", {
+                            headers: { "X-Requested-With": "XMLHttpRequest" },
+                        })
+                            .then(function (r) {
+                                return r.json();
+                            })
+                            .catch(function () {
+                                return {};
+                            });
+                        cf.textContent = (files.current || "\u2014").replace(
+                            "/etc/unbound/",
+                            "\u2026/",
+                        );
+                    }
+                } catch (e) {}
+            }
 
-    // Public alias for the Refresh button on home/settings pages
-    async function refreshStats() {
-      toast('Refreshing statistics\u2026', 'info');
-      await updateUnboundStatus(true);
-    }
+            function updateClock() {
+                var el = document.getElementById("topbar-clock");
+                if (el) el.textContent = new Date().toLocaleTimeString("en-GB");
+            }
 
-    async function updateHostname() {
-      try {
-        var r = await fetch('/api/sysinfo', { headers: { 'X-Requested-With': 'XMLHttpRequest' }, redirect: 'manual' });
-        if (r.type === 'opaqueredirect') { _handleSessionExpiry(); return; }
-        var json = await r.json();
-        _setText('tb-hostname', json.hostname || '\u2014');
-        var cf = document.getElementById('sb-cfgfile');
-        if (cf) {
-          var files = await fetch('/api/config/files', { headers: { 'X-Requested-With': 'XMLHttpRequest' } }).then(function(r){ return r.json(); }).catch(function(){ return {}; });
-          cf.textContent = (files.current || '\u2014').replace('/etc/unbound/', '\u2026/');
-        }
-      } catch(e) {}
-    }
+            function switchTab(id) {
+                document.querySelectorAll(".tab-pane").forEach(function (p) {
+                    p.classList.remove("active");
+                });
+                document.querySelectorAll(".tab-btn").forEach(function (b) {
+                    b.classList.remove("active");
+                });
+                var pane = document.getElementById("tab-" + id);
+                var btn = document.querySelector('[data-tab="' + id + '"]');
+                if (pane) pane.classList.add("active");
+                if (btn) btn.classList.add("active");
+            }
 
-    function updateClock() {
-      var el = document.getElementById('topbar-clock');
-      if (el) el.textContent = new Date().toLocaleTimeString('en-GB');
-    }
+            // INIT
+            updateClock();
+            _clockInterval = setInterval(updateClock, 1000);
+            updateUnboundStatus(false);
+            _statsInterval = setInterval(function () {
+                updateUnboundStatus(false);
+            }, 10000);
+            updateHostname();
+        </script>
 
-    function switchTab(id) {
-      document.querySelectorAll('.tab-pane').forEach(function(p){ p.classList.remove('active'); });
-      document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
-      var pane = document.getElementById('tab-' + id);
-      var btn  = document.querySelector('[data-tab="' + id + '"]');
-      if (pane) pane.classList.add('active');
-      if (btn)  btn.classList.add('active');
-    }
-
-    // INIT
-    updateClock();
-    _clockInterval = setInterval(updateClock, 1000);
-    updateUnboundStatus(false);
-    _statsInterval = setInterval(function(){ updateUnboundStatus(false); }, 10000);
-    updateHostname();
-  </script>
-
-  {% block scripts %}{% endblock %}
-</body>
+        {% block scripts %}{% endblock %}
+    </body>
 </html>
