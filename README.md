@@ -1,10 +1,10 @@
-# WebUI for Unbound DNS
+<h1 align="center">WebUI for Unbound DNS</h1>
 
 >[!WARNING]
 >AI Disclosure: This project was developed entirely using AI. The creator is not a Python or Java programmer. Use at your own risk. The creator is not responsible for data loss or system instability.
 
 
-<details open>
+<details open align="center">
   <summary><b>Click to collapse Screenshots</b></summary>
   <br>
 
@@ -85,5 +85,6 @@ Once the application is running:
 - **Without TLS/HTTP:** Access the interface at `http://<your-ip>:8080`.   
 
 the default login credentials is `admin/admin`
-   
-> Note: If you are using a self-signed certificate, your browser will display a "Potential Security Risk" warning. This is expected behavior; you can safely click "Advanced" and "Proceed" to access your local interface.   
+
+>[!NOTE]
+>If you are using a self-signed certificate, your browser will display a "Potential Security Risk" warning. This is expected behavior; you can safely click "Advanced" and "Proceed" to access your local interface.   
