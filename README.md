@@ -3,23 +3,28 @@
 >[!WARNING]
 >AI Disclosure: This project was developed entirely using AI. The creator is not a Python or Java programmer. Use at your own risk. The creator is not responsible for data loss or system instability.
 
+https://camo.githubusercontent.com/2e445a865a4b6368b5fe5fdd90deb88311469c644320af29c1499ab42b506884/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f706c6174666f726d2d4c696e75782d4643433632343f6c6f676f3d6c696e7578266c6f676f436f6c6f723d626c61636b
 
-**Home Page:**
-<img width="1495" height="1186" alt="image" src="https://github.com/user-attachments/assets/1bcaf0d8-02d5-4980-ad23-ef0595acf326" />
+<details open>
+  <summary><b>Click to collapse Screenshots</b></summary>
+  <br>
 
-**Config Page:**
-<img width="1495" height="1186" alt="image" src="https://github.com/user-attachments/assets/987ed7cf-5590-4890-aab7-614415d62dc7" />
+  **Home Page:**
+  <img width="1495" height="1186" alt="image" src="https://github.com/user-attachments/assets/1bcaf0d8-02d5-4980-ad23-ef0595acf326" />
 
-**Debug Page:**
-<img width="1495" height="1186" alt="image" src="https://github.com/user-attachments/assets/8bb9823e-1349-4998-b308-3937e151ebec" />
+  **Config Page:**
+  <img width="1495" height="1186" alt="image" src="https://github.com/user-attachments/assets/987ed7cf-5590-4890-aab7-614415d62dc7" />
 
-**Settings Page:**
-<img width="1495" height="1186" alt="image" src="https://github.com/user-attachments/assets/a7ac70aa-1a5a-4306-bd7a-cb10dbcea26d" />
+  **Debug Page:**
+  <img width="1495" height="1186" alt="image" src="https://github.com/user-attachments/assets/8bb9823e-1349-4998-b308-3937e151ebec" />
 
-**Login Page:**
-<img width="1495" height="1186" alt="image" src="https://github.com/user-attachments/assets/d73153fd-3139-4891-be51-4770413cd4a8" />
+  **Settings Page:**
+  <img width="1495" height="1186" alt="image" src="https://github.com/user-attachments/assets/a7ac70aa-1a5a-4306-bd7a-cb10dbcea26d" />
 
+  **Login Page:**
+  <img width="1495" height="1186" alt="image" src="https://github.com/user-attachments/assets/d73153fd-3139-4891-be51-4770413cd4a8" />
 
+</details>
 
 
 
